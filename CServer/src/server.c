@@ -63,45 +63,79 @@ int run_server()
     }
 }
 
+int parse_header(int sock)
+{
+    char c;
+    char buff[1024] = "", *ptr = buff + 4;
+    int bytes_received, status;
+    printf("Begin HEADER ..\n");
+    while (bytes_received = recv(sock, ptr, 1, 0))
+    {
+        if (bytes_received == -1)
+        {
+            perror("Parse Header");
+            exit(1);
+        }
+
+        if (
+            (ptr[-3] == '\r') && (ptr[-2] == '\n') &&
+            (ptr[-1] == '\r') && (*ptr == '\n'))
+            break;
+        ptr++;
+    }
+
+    *ptr = 0;
+    ptr = buff + 4;
+    //printf("%s",ptr);
+
+    if (bytes_received)
+    {
+        ptr = strstr(ptr, "Content-Length:");
+        if (ptr)
+        {
+            sscanf(ptr, "%*s %d", &bytes_received);
+        }
+        else
+            bytes_received = -1; //unknown size
+
+        printf("Content-Length: %d\n", bytes_received);
+    }
+    printf("End HEADER ..\n");
+    return bytes_received;
+}
+
 void *connection_handler(void *socket_desc)
 {
     int sock = *(int *)socket_desc;
-    int read_size;
-    char client_message[256];
-    int bytesReceived = 0;
+    int contentlengh, bytes_received;
+    char recv_data[1024];
 
-    FILE *fp;
-    fp = fopen("/home/ema0898/Programas/Operativos/Tarea1/barbara2.jpg", "ab");
-    if (NULL == fp)
+    if (contentlengh = parse_header(sock))
     {
-        printf("Error opening file");
-    }
+        char fileName[50];
+        snprintf(fileName, sizeof(fileName), "test%ld.png", pthread_self());
 
-    /* Receive data in chunks of 256 bytes */
-    while ((bytesReceived = read(sock, client_message, 256)) > 0)
-    {
-        if (strcmp(client_message, "END\r\n") == 0 || strcmp(client_message, "END") == 0)
+        int bytes = 0;
+        FILE *fd = fopen(fileName, "wb");
+        printf("Saving data...\n\n");
+
+        while (bytes_received = recv(sock, recv_data, 1024, 0))
         {
-            printf("While terminated\n");
-            break;
+            if (bytes_received == -1)
+            {
+                perror("recieve");
+                exit(3);
+            }
+
+            fwrite(recv_data, 1, bytes_received, fd);
+            bytes += bytes_received;
+            printf("Bytes recieved: %d from %d\n", bytes, contentlengh);
+            if (bytes == contentlengh)
+                break;
         }
-
-        printf("Bytes received %d\n", bytesReceived);
-        fwrite(client_message, 1, bytesReceived, fp);
+        fclose(fd);
     }
 
-    fclose(fp);
-
-    if (read_size == 0)
-    {
-        puts("Client disconnected");
-        fflush(stdout);
-    }
-    else if (read_size == -1)
-    {
-        perror("recv failed");
-    }
-
-    free(socket_desc);
     close(sock);
+    printf("\n\nDone.\n\n");
 }
