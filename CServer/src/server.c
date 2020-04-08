@@ -25,7 +25,7 @@ void init_server()
     if (bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         perror("bind failed. Error");
-        EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
     puts("bind done");
 
@@ -63,6 +63,7 @@ int run_server()
     }
 }
 
+//https://stackoverflow.com/questions/33960385/how-to-download-a-file-from-http-using-c
 int parse_header(int sock)
 {
     char c;
@@ -113,7 +114,7 @@ void *connection_handler(void *socket_desc)
     if (contentlengh = parse_header(sock))
     {
         char fileName[50];
-        snprintf(fileName, sizeof(fileName), "test%ld.png", pthread_self());
+        snprintf(fileName, sizeof(fileName), "../test%ld.png", pthread_self());
 
         int bytes = 0;
         FILE *fd = fopen(fileName, "wb");

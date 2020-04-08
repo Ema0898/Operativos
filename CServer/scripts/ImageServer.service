@@ -1,4 +1,4 @@
-# this is /usr/lib/systemd/system/your_cmd.service
+# this is /lib/systemd/system/your_cmd.service
 # (or /lib/systemd/system/your_cmd.service dependent on 
 #  your linux distribution flavor )
 [Unit]
