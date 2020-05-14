@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <!--head of web page-->
+  <head>
+    <meta charset="utf-8">
+    <title>Upload Image</title>
+    <!--Responsive web page-->
+    <meta name="viewport" content="width=device-width, initial-scale= `1.0">
+    <meta charset="utf-8">
+    <!--style .css-->
+    <link rel="stylesheet" href="../public/stylesheets/uploadImage.css">
+  </head>
+
+  <!--Body of web page-->
+  <body>
+    <!--Center position all things of the web page-->
+    <div class="center">
+      <h1>Upload image to Server</h1>
+      <!--See image preview-->
+      <div class="center image-preview" id="imagePreview">
+        <img src="" alt="Image Preview" class="image-preview__image" id="image">
+        <span class="image-preview__default-text">Image Preview</span>
+      </div>
+      <!--input file image and button to choose image-->
+      <div>
+        <input type="file" id="inpFile" name="inpFile" hidden="hidden" />
+        <button type="button" class="custom-button" id="custom-button">CHOOSE IMAGE</button>
+        <span class="custom-text" id="custom-text">No file chosen yet.</span>  
+      </div>
+      <!--input Ip and Port to connect to server-->
+      <div>
+        <p>IP</p>
+        <input autocomplete="off" type="text" id="ip" name="ip" placeholder="IP ...">
+        <p>Port</p>
+        <input autocomplete="off" type="text" id="port" name="port" placeholder="Port ...">
+      </div>
+      <!--Button to send image to server-->
+      <button type="button" class="custom-button" id="send-button">SEND IMAGE</button>
+    </div>
+    
+    <!--scripts js necessaries-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="../public/scripts/uploadImage.js"></script>
+  </body>
+</html>
