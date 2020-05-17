@@ -28,6 +28,16 @@ void median_filter(const char* image_path, const char* image_name, const char* d
 
 
 /**
+ Classifies the image depending on the number of pixels of a certain color: red, green or blue 
+ const char* image_path: Image directory input
+ const char* image_name: Image name
+ const char* destiny_path: Image directory output
+*/
+
+void classify(const char* image_path, const char* image_name, const char* destiny_path);
+
+
+/**
  Simple compare function
 */
 
