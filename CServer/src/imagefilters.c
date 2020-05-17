@@ -553,6 +553,80 @@ void median_filter(const char* image_path, const char* image_name, const char* d
 	MagickWandTerminus();
 }
 
+void classify(const char* image_path, const char* image_name, const char* destiny_path)
+ {
+  //buffer for strings
+  char buffer[120];
+  //indexes
+  long y;
+  register long x;
+  unsigned long width;
+
+  //library elements initializing
+  MagickBooleanType status;
+  MagickWand *copy_wand, *m_wand;
+  PixelIterator *iterator;
+  PixelWand **pixels;
+
+  //accumulators for average
+  float red_pixels = 0;
+  float green_pixels = 0;
+  float blue_pixels = 0;
+
+  //Initialize library
+  MagickWandGenesis();
+  m_wand = NewMagickWand();
+
+  //Image path
+  sprintf(buffer, "%s%s", image_path, image_name);
+  status = MagickReadImage(m_wand, buffer);
+  printf("%s\n", buffer);
+
+  //Validation for opening
+  if (status == MagickFalse)
+      printf("Can't open image.\n");
+  copy_wand = CloneMagickWand(m_wand);
+
+  //Total of pixels
+  int total = (int) MagickGetImageHeight(m_wand) * MagickGetImageWidth(m_wand);
+
+  //Iterate over image to accumulate RGB values
+  iterator = NewPixelIterator(m_wand);
+  if ((iterator == (PixelIterator *) NULL))
+      printf("Iterator error.\n");
+  for (y = 0; y < (long) MagickGetImageHeight(m_wand); y++) {
+      pixels = PixelGetNextIteratorRow(iterator, &width);
+      if ((pixels == (PixelWand **) NULL))
+          break;
+      for (x = 0; x < (long) width; x++) {
+          red_pixels += PixelGetRed(pixels[x]) * 255;
+          green_pixels += PixelGetGreen(pixels[x]) * 255;
+          blue_pixels += PixelGetBlue(pixels[x]) * 255;
+      }
+  }
+
+  //Divide by total
+  red_pixels /= total;
+  green_pixels /= total;
+  blue_pixels /= total;
+
+  printf("R: %f, G: %f, B: %f\n", red_pixels, green_pixels, blue_pixels);
+
+  //Choose folder according to result 
+  if (red_pixels >= green_pixels && red_pixels >= blue_pixels) sprintf(buffer, "%sred/%s", destiny_path, image_name);
+  else if (green_pixels >= red_pixels && green_pixels >= blue_pixels) sprintf(buffer, "%sgreen/%s", destiny_path, image_name);
+  else if (blue_pixels >= green_pixels && blue_pixels >= red_pixels) sprintf(buffer, "%sblue/%s", destiny_path, image_name);
+
+  //Free resources
+  iterator = DestroyPixelIterator(iterator);
+  m_wand = DestroyMagickWand(m_wand);
+  status = MagickWriteImages(copy_wand, buffer, MagickTrue);
+  if (status == MagickFalse)
+      printf("Can't write image.\n");
+  copy_wand = DestroyMagickWand(copy_wand);
+  MagickWandTerminus();
+}
+
 
 int cmpfunc (const void * a, const void * b)
 {
