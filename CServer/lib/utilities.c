@@ -104,7 +104,7 @@ void getData(int *port, char **colors, char **histo, char **log)
   int fileLines = split(fileData, '\n', &arr);
 
   char keys[fileLines][10];
-  char values[fileLines][30];
+  char values[fileLines][50];
 
   memset(keys, 0, sizeof(keys));
   memset(values, 0, sizeof(values));
@@ -157,4 +157,6 @@ void getData(int *port, char **colors, char **histo, char **log)
       *log = values[i];
     }
   }
+
+  free(arr);
 }

@@ -9,7 +9,9 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <time.h>
 #include <utilities.h>
+#include <images.h>
 
 int socket_desc, client_sock, c, *new_sock;
 struct sockaddr_in server, client;
