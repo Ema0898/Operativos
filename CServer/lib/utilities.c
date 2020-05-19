@@ -97,66 +97,39 @@ int split(char *str, char c, char ***arr)
 
 void getData(int *port, char **colors, char **histo, char **log)
 {
-  char *fileData = readFile("/home/ema0898/Programas/Operativos/Tarea1/config.conf");
+  FILE *file = fopen("/home/ema0898/Programas/Operativos/Tarea1/config.conf", "r");
+
+  int count = 0;
+  char line[256];
   char **arr = NULL;
-  int rows = 0, lines = 0;
-
-  int fileLines = split(fileData, '\n', &arr);
-
-  char keys[fileLines][10];
-  char values[fileLines][50];
-
-  memset(keys, 0, sizeof(keys));
-  memset(values, 0, sizeof(values));
-
-  while (rows < fileLines)
+  char **arr2 = NULL;
+  /* or other suitable maximum line size */
+  while (fgets(line, sizeof line, file) != NULL) /* read a line */
   {
-    int length = strlen(arr[rows]);
+    split(line, ':', &arr);
+    split(arr[1], '\n', &arr2);
 
-    for (int i = 0; i < length; ++i)
+    if (count == 0 && port != NULL)
     {
-      if (arr[rows][i] == ':')
-      {
-        int offset = lines + 1;
-
-        for (int j = offset; j < length; ++j)
-        {
-          values[rows][j - offset] = arr[rows][j];
-        }
-
-        break;
-      }
-
-      keys[rows][i] = arr[rows][i];
-      lines++;
+      *port = atoi(arr2[0]);
+    }
+    else if (count == 1 && colors != NULL)
+    {
+      *colors = arr2[0];
+    }
+    else if (count == 2 && histo != NULL)
+    {
+      *histo = arr2[0];
+    }
+    else if (count == 3 && log != NULL)
+    {
+      *log = arr2[0];
     }
 
-    lines = 0;
-    rows++;
+    count++;
+
+    free(arr);
+    free(arr2);
   }
-
-  for (int i = 0; i < 4; ++i)
-  {
-    if (strcmp(keys[i], "Port") == 0)
-    {
-      *port = (atoi(values[i]));
-    }
-
-    if (strcmp(keys[i], "DirColors") == 0)
-    {
-      *colors = values[i];
-    }
-
-    if (strcmp(keys[i], "DirHisto") == 0)
-    {
-      *histo = values[i];
-    }
-
-    if (strcmp(keys[i], "DirLog") == 0)
-    {
-      *log = values[i];
-    }
-  }
-
-  free(arr);
+  fclose(file);
 }

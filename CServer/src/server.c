@@ -1,10 +1,13 @@
 #include <server.h>
 
-int port = 0;
-int clientCounter = 0;
-char *colors = NULL;
-char *histo = NULL;
-char *logs = NULL;
+typedef struct
+{
+  int sock;
+  int clientCounter;
+  char *colors;
+  char *histo;
+  char *logs;
+} threadArgs;
 
 void init_server(int port)
 {
@@ -39,16 +42,13 @@ int run_server()
 {
   // Parseo del archivo de configuracion
 
-  port = 1777;
-  colors = "/home/ema0898/Programas/Operativos/Tarea1/media/classify/";
-  histo = "/home/ema0898/Programas/Operativos/Tarea1/media/";
-  logs = "/home/ema0898/Programas/Operativos/Tarea1/";
+  int port = 1777;
+  int clientCounter = 0;
+  char *colors = "/home/ema0898/Programas/Operativos/Tarea1/";
+  char *histo = "/home/ema0898/Programas/Operativos/Tarea1/";
+  char *logs = "/home/ema0898/Programas/Operativos/Tarea1/";
 
-  //getData(&port, &colors, &histo, &logs);
-
-  printf("Colors route = %s\n", colors);
-  printf("Histo route = %s\n", histo);
-  printf("Logs route = %s\n", logs);
+  getData(&port, NULL, NULL, NULL);
 
   init_server(port);
 
@@ -62,8 +62,25 @@ int run_server()
 
     clientCounter++;
 
-    if (pthread_create(&sniffer_thread, NULL, connection_handler, (void *)new_sock) < 0)
+    threadArgs *args = malloc(sizeof *args);
+
+    args->clientCounter = clientCounter;
+    args->sock = client_sock;
+    args->colors = malloc(sizeof(char) * 100);
+    args->histo = malloc(sizeof(char) * 100);
+    args->logs = malloc(sizeof(char) * 100);
+
+    memcpy(args->colors, colors, sizeof(char) * 100);
+    memcpy(args->histo, histo, sizeof(char) * 100);
+    memcpy(args->logs, logs, sizeof(char) * 100);
+
+    if (pthread_create(&sniffer_thread, NULL, connection_handler, args) < 0)
     {
+      free(args);
+      free(args->colors);
+      free(args->histo);
+      free(args->logs);
+
       perror("could not create thread");
       return 1;
     }
@@ -120,9 +137,19 @@ int parse_header(int sock)
   return bytes_received;
 }
 
-void *connection_handler(void *socket_desc)
+void *connection_handler(void *args)
 {
-  int sock = *(int *)socket_desc;
+  printf("Inside thread\n");
+  threadArgs *actual_args = args;
+
+  getData(NULL, &(actual_args->colors), &(actual_args->histo), &(actual_args->logs));
+
+  printf("Client Number %d\n", actual_args->clientCounter);
+  printf("Color route %s\n", actual_args->colors);
+  printf("Histo route %s\n", actual_args->histo);
+  printf("Log route %s\n", actual_args->logs);
+
+  // int sock = *(int *)socket_desc;
   int contentlengh, bytes_received;
 
   char recv_data[1024];
@@ -133,8 +160,10 @@ void *connection_handler(void *socket_desc)
   char logFileName[50];
   char clientInfo[100];
 
-  sprintf(logFileName, "%sserver.log", logs);
+  sprintf(logFileName, "%sserver.log", actual_args->logs);
   FILE *logFile = fopen(logFileName, "a");
+
+  printf("LOG FILE LOCATION: %s\n", logFileName);
 
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
@@ -142,22 +171,22 @@ void *connection_handler(void *socket_desc)
   strftime(date, sizeof(date), "%c", tm);
 
   sprintf(clientInfo, "Client %d connected, processing file image%d, at %s\n",
-          clientCounter, clientCounter, date);
+          actual_args->clientCounter, actual_args->clientCounter, date);
   fputs(clientInfo, logFile);
 
-  if (contentlengh = parse_header(sock))
+  if (contentlengh = parse_header(actual_args->sock))
   {
     fputs("Start to recieve image\n", logFile);
 
-    sprintf(fileName, "image%d.png", clientCounter);
-    snprintf(imageRoute, sizeof(imageRoute), "../%s", fileName);
+    sprintf(fileName, "image%d.png", actual_args->clientCounter);
+    sprintf(imageRoute, "../%s", fileName);
 
     int bytes = 0;
     FILE *fd = fopen(imageRoute, "wb");
 
     printf("Saving data...\n\n");
 
-    while (bytes_received = recv(sock, recv_data, 1024, 0))
+    while (bytes_received = recv(actual_args->sock, recv_data, 1024, 0))
     {
       if (bytes_received == -1)
       {
@@ -178,12 +207,13 @@ void *connection_handler(void *socket_desc)
 
     printf("Image Received\n");
 
-    sprintf(averageName, "%saverage_filter", histo);
-    sprintf(medianName, "%smedian_filter", histo);
+    sprintf(averageName, "%saverage_filter", actual_args->histo);
+    sprintf(medianName, "%smedian_filter", actual_args->histo);
 
-    // Process Image
+    printf("AVERAGE FILTER ROUTE = %s\n", averageName);
+
     fputs("Start Classify Image...\n", logFile);
-    classify("../", fileName, colors);
+    classify("../", fileName, actual_args->colors);
 
     fputs("Applying average filter to  Image...\n", logFile);
     average_filter("../", fileName, averageName);
@@ -203,5 +233,10 @@ void *connection_handler(void *socket_desc)
   }
 
   fclose(logFile);
-  close(sock);
+  close(actual_args->sock);
+
+  free(actual_args->colors);
+  free(actual_args->histo);
+  free(actual_args->logs);
+  free(args);
 }

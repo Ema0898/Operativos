@@ -1,4 +1,4 @@
-Client 1 connected, processing file image1, at Mon May 18 18:13:19 2020
+Client 1 connected, processing file image1, at Mon May 18 16:39:41 2020
 Start to recieve image
 Image received
 Start to process Image
@@ -7,7 +7,7 @@ Applying average filter to  Image...
 Applying median filter to  Image...
 Image Processed
 ----------------
-Client 3 connected, processing file image3, at Mon May 18 18:14:40 2020
+Client 1 connected, processing file image1, at Mon May 18 16:42:38 2020
 Start to recieve image
 Image received
 Start to process Image
@@ -16,7 +16,7 @@ Applying average filter to  Image...
 Applying median filter to  Image...
 Image Processed
 ----------------
-Client 4 connected, processing file image4, at Mon May 18 18:15:11 2020
+Client 1 connected, processing file image1, at Mon May 18 16:53:00 2020
 Start to recieve image
 Image received
 Start to process Image
@@ -25,7 +25,7 @@ Applying average filter to  Image...
 Applying median filter to  Image...
 Image Processed
 ----------------
-Client 1 connected, processing file image1, at Mon May 18 18:20:00 2020
+Client 1 connected, processing file image1, at Mon May 18 16:53:52 2020
 Start to recieve image
 Image received
 Start to process Image
@@ -34,7 +34,25 @@ Applying average filter to  Image...
 Applying median filter to  Image...
 Image Processed
 ----------------
-Client 1 connected, processing file image1, at Mon May 18 19:35:15 2020
+Client 2 connected, processing file image2, at Mon May 18 16:54:30 2020
+Start to recieve image
+Image received
+Start to process Image
+Start Classify Image...
+Applying average filter to  Image...
+Applying median filter to  Image...
+Image Processed
+----------------
+Client 1 connected, processing file image1, at Mon May 18 16:56:11 2020
+Start to recieve image
+Image received
+Start to process Image
+Start Classify Image...
+Applying average filter to  Image...
+Applying median filter to  Image...
+Image Processed
+----------------
+Client 1 connected, processing file image1, at Mon May 18 16:57:38 2020
 Start to recieve image
 Image received
 Start to process Image
