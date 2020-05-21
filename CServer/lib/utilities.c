@@ -2,35 +2,31 @@
 #include <string.h>
 #include <stdlib.h>
 
-// https://stackoverflow.com/questions/4823177/reading-a-file-character-by-character-in-c
-char *readFile(char *fileName)
+void readCounter(int *clientCounter)
 {
-  FILE *file = fopen(fileName, "r");
-  char *code;
-  size_t n = 0;
-  int c;
+  FILE *file = fopen("../server.client", "r");
 
-  if (file == NULL)
+  if (file != NULL)
   {
-    printf("File %s not found\n", fileName);
-    return NULL;
+    char line[3];
+    fgets(line, sizeof line, file);
+    *clientCounter = atoi(line);
+
+    fclose(file);
   }
-
-  fseek(file, 0, SEEK_END);
-  long f_size = ftell(file);
-  fseek(file, 0, SEEK_SET);
-  code = malloc(f_size);
-
-  while ((c = fgetc(file)) != EOF)
+  else
   {
-    code[n++] = (char)c;
+    printf("File does not exists\n");
   }
+}
 
+void writeCounter(int clientCounter)
+{
+  FILE *file = fopen("../server.client", "w+");
+  char line[3];
+  sprintf(line, "%d", clientCounter);
+  fputs(line, file);
   fclose(file);
-
-  code[n] = '\0';
-
-  return code;
 }
 
 // https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
@@ -99,37 +95,44 @@ void getData(int *port, char **colors, char **histo, char **log)
 {
   FILE *file = fopen("/home/ema0898/Programas/Operativos/Tarea1/config.conf", "r");
 
-  int count = 0;
-  char line[256];
-  char **arr = NULL;
-  char **arr2 = NULL;
-  /* or other suitable maximum line size */
-  while (fgets(line, sizeof line, file) != NULL) /* read a line */
+  if (file != NULL)
   {
-    split(line, ':', &arr);
-    split(arr[1], '\n', &arr2);
+    int count = 0;
+    char line[256];
+    char **arr = NULL;
+    char **arr2 = NULL;
+    /* or other suitable maximum line size */
+    while (fgets(line, sizeof line, file) != NULL) /* read a line */
+    {
+      split(line, ':', &arr);
+      split(arr[1], '\n', &arr2);
 
-    if (count == 0 && port != NULL)
-    {
-      *port = atoi(arr2[0]);
-    }
-    else if (count == 1 && colors != NULL)
-    {
-      *colors = arr2[0];
-    }
-    else if (count == 2 && histo != NULL)
-    {
-      *histo = arr2[0];
-    }
-    else if (count == 3 && log != NULL)
-    {
-      *log = arr2[0];
-    }
+      if (count == 0 && port != NULL)
+      {
+        *port = atoi(arr2[0]);
+      }
+      else if (count == 1 && colors != NULL)
+      {
+        *colors = arr2[0];
+      }
+      else if (count == 2 && histo != NULL)
+      {
+        *histo = arr2[0];
+      }
+      else if (count == 3 && log != NULL)
+      {
+        *log = arr2[0];
+      }
 
-    count++;
+      count++;
 
-    free(arr);
-    free(arr2);
+      free(arr);
+      free(arr2);
+    }
+    fclose(file);
   }
-  fclose(file);
+  else
+  {
+    printf("Configuration File not found\n");
+  }
 }

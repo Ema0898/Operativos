@@ -48,7 +48,8 @@ int run_server()
   char *histo = "/home/ema0898/Programas/Operativos/Tarea1/";
   char *logs = "/home/ema0898/Programas/Operativos/Tarea1/";
 
-  getData(&port, NULL, NULL, NULL);
+  getData(&port, &colors, &histo, &logs);
+  readCounter(&clientCounter);
 
   init_server(port);
 
@@ -142,8 +143,6 @@ void *connection_handler(void *args)
   printf("Inside thread\n");
   threadArgs *actual_args = args;
 
-  getData(NULL, &(actual_args->colors), &(actual_args->histo), &(actual_args->logs));
-
   printf("Client Number %d\n", actual_args->clientCounter);
   printf("Color route %s\n", actual_args->colors);
   printf("Histo route %s\n", actual_args->histo);
@@ -231,6 +230,8 @@ void *connection_handler(void *args)
     fputs("Failed to receive data\n", logFile);
     fputs("----------------\n", logFile);
   }
+
+  writeCounter(actual_args->clientCounter);
 
   fclose(logFile);
   close(actual_args->sock);
