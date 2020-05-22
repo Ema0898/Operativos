@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 void readCounter(int *clientCounter)
 {
-  FILE *file = fopen("../server.client", "r");
+  FILE *file = fopen("../tmp/server.client", "r");
 
   if (file != NULL)
   {
@@ -16,13 +19,13 @@ void readCounter(int *clientCounter)
   }
   else
   {
-    printf("File does not exists\n");
+    printf("Counter File does not exists\n");
   }
 }
 
 void writeCounter(int clientCounter)
 {
-  FILE *file = fopen("../server.client", "w+");
+  FILE *file = fopen("../tmp/server.client", "w+");
   char line[3];
   sprintf(line, "%d", clientCounter);
   fputs(line, file);
@@ -91,48 +94,69 @@ int split(char *str, char c, char ***arr)
   return count;
 }
 
+void checkDir(char *path)
+{
+  struct stat st = {0};
+  if (stat(path, &st) == -1)
+  {
+    mkdir(path, 0700);
+    printf("Directory %s created\n", path);
+  }
+  else
+  {
+    printf("Directory %s already exists\n", path);
+  }
+}
+
+void checkColorsRoute(char *path)
+{
+  char line[256];
+  sprintf(line, "%srojas", path);
+  checkDir(line);
+
+  sprintf(line, "%sazules", path);
+  checkDir(line);
+
+  sprintf(line, "%sverdes", path);
+  checkDir(line);
+}
+
 void getData(int *port, char **colors, char **histo, char **log)
 {
   FILE *file = fopen("/home/ema0898/Programas/Operativos/Tarea1/config.conf", "r");
 
-  if (file != NULL)
+  char line[256];
+  char **arr = NULL;
+  char **arr2 = NULL;
+  /* or other suitable maximum line size */
+  while (fgets(line, sizeof line, file) != NULL) /* read a line */
   {
-    int count = 0;
-    char line[256];
-    char **arr = NULL;
-    char **arr2 = NULL;
-    /* or other suitable maximum line size */
-    while (fgets(line, sizeof line, file) != NULL) /* read a line */
+    split(line, ':', &arr);
+    split(arr[1], '\n', &arr2);
+
+    if (!strcmp(arr[0], "Port"))
     {
-      split(line, ':', &arr);
-      split(arr[1], '\n', &arr2);
-
-      if (count == 0 && port != NULL)
-      {
-        *port = atoi(arr2[0]);
-      }
-      else if (count == 1 && colors != NULL)
-      {
-        *colors = arr2[0];
-      }
-      else if (count == 2 && histo != NULL)
-      {
-        *histo = arr2[0];
-      }
-      else if (count == 3 && log != NULL)
-      {
-        *log = arr2[0];
-      }
-
-      count++;
-
-      free(arr);
-      free(arr2);
+      *port = atoi(arr2[0]);
     }
-    fclose(file);
+    else if (!strcmp(arr[0], "DirColors"))
+    {
+      checkDir(arr2[0]);
+      checkColorsRoute(arr2[0]);
+      *colors = arr2[0];
+    }
+    else if (!strcmp(arr[0], "DirHisto"))
+    {
+      checkDir(arr2[0]);
+      *histo = arr2[0];
+    }
+    else if (!strcmp(arr[0], "DirLog"))
+    {
+      checkDir(arr2[0]);
+      *log = arr2[0];
+    }
+
+    free(arr);
+    free(arr2);
   }
-  else
-  {
-    printf("Configuration File not found\n");
-  }
+  fclose(file);
 }

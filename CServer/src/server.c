@@ -42,7 +42,7 @@ int run_server()
 {
   // Parseo del archivo de configuracion
 
-  int port = 1777;
+  int port = 1717;
   int clientCounter = 0;
   char *colors = "/home/ema0898/Programas/Operativos/Tarea1/";
   char *histo = "/home/ema0898/Programas/Operativos/Tarea1/";
@@ -50,6 +50,7 @@ int run_server()
 
   getData(&port, &colors, &histo, &logs);
   readCounter(&clientCounter);
+  checkDir("../tmp/");
 
   init_server(port);
 
@@ -178,7 +179,7 @@ void *connection_handler(void *args)
     fputs("Start to recieve image\n", logFile);
 
     sprintf(fileName, "image%d.png", actual_args->clientCounter);
-    sprintf(imageRoute, "../%s", fileName);
+    sprintf(imageRoute, "../tmp/%s", fileName);
 
     int bytes = 0;
     FILE *fd = fopen(imageRoute, "wb");
@@ -191,6 +192,11 @@ void *connection_handler(void *args)
       {
         perror("recieve");
         exit(3);
+      }
+
+      if (!strcmp(recv_data, "Hola"))
+      {
+        printf("Got text\n");
       }
 
       fwrite(recv_data, 1, bytes_received, fd);
@@ -212,13 +218,13 @@ void *connection_handler(void *args)
     printf("AVERAGE FILTER ROUTE = %s\n", averageName);
 
     fputs("Start Classify Image...\n", logFile);
-    classify("../", fileName, actual_args->colors);
+    classify("../tmp/", fileName, actual_args->colors);
 
     fputs("Applying average filter to  Image...\n", logFile);
-    average_filter("../", fileName, averageName);
+    average_filter("../tmp/", fileName, averageName);
 
     fputs("Applying median filter to  Image...\n", logFile);
-    median_filter("../", fileName, medianName);
+    median_filter("../tmp/", fileName, medianName);
 
     printf("Image Processed\n");
 
