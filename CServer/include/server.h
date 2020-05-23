@@ -13,6 +13,8 @@
 #include <utilities.h>
 #include <images.h>
 
+// Header del servidor
+
 int socket_desc, client_sock, c, *new_sock;
 struct sockaddr_in server, client;
 

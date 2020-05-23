@@ -1,5 +1,6 @@
 #include <server.h>
 
+// Estrcutura usada para los parametros del hilo
 typedef struct
 {
   int sock;
@@ -9,6 +10,7 @@ typedef struct
   char *logs;
 } threadArgs;
 
+// Inicia el servidor
 void init_server(int port)
 {
   socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -38,15 +40,16 @@ void init_server(int port)
   puts("Waiting for incoming connections...");
 }
 
+// Funcion que espera y acepta las conexiones
 int run_server()
 {
   // Parseo del archivo de configuracion
 
   int port = 1717;
   int clientCounter = 0;
-  char *colors = "/home/ema0898/Programas/Operativos/Tarea1/";
-  char *histo = "/home/ema0898/Programas/Operativos/Tarea1/";
-  char *logs = "/home/ema0898/Programas/Operativos/Tarea1/";
+  char *colors = "/home/ema/Operativos/CServer/";
+  char *histo = "/home/ema/Operativos/CServer/";
+  char *logs = "/home/ema/Operativos/CServer/";
 
   getData(&port, &colors, &histo, &logs);
   readCounter(&clientCounter);
@@ -98,7 +101,7 @@ int run_server()
   }
 }
 
-//https://stackoverflow.com/questions/33960385/how-to-download-a-file-from-http-using-c
+// Funcion para parsear el header el request
 int parse_header(int sock)
 {
   char c;
@@ -131,7 +134,7 @@ int parse_header(int sock)
       sscanf(ptr, "%*s %d", &bytes_received);
     }
     else
-      bytes_received = -1; //unknown size
+      bytes_received = -1; 
 
     printf("Content-Length: %d\n", bytes_received);
   }
@@ -139,6 +142,7 @@ int parse_header(int sock)
   return bytes_received;
 }
 
+// Funcion usada para procesar las imagenes por tamaño
 void readAndProcess(char *colors, char *histo, FILE *logfile)
 {
   FILE *file = fopen("../tmp/tmpfile.txt", "r");
@@ -190,6 +194,7 @@ void readAndProcess(char *colors, char *histo, FILE *logfile)
   fclose(file);
 }
 
+// Handler de los hilos
 void *connection_handler(void *args)
 {
   threadArgs *actual_args = args;

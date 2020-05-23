@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+// Usada escribir el archivo de registro de cliente
 void readCounter(int *clientCounter)
 {
   FILE *file = fopen("../tmp/server.client", "r");
@@ -23,6 +24,7 @@ void readCounter(int *clientCounter)
   }
 }
 
+// Usada leer el archivo de registro de cliente
 void writeCounter(int clientCounter)
 {
   FILE *file = fopen("../tmp/server.client", "w+");
@@ -32,7 +34,7 @@ void writeCounter(int clientCounter)
   fclose(file);
 }
 
-// https://stackoverflow.com/questions/9210528/split-string-with-delimiters-in-c
+// Funcion de split usada en varias funciones
 int split(char *str, char c, char ***arr)
 {
   int count = 1;
@@ -94,6 +96,7 @@ int split(char *str, char c, char ***arr)
   return count;
 }
 
+// Revisa que existan los directorios, sino los crea
 void checkDir(char *path)
 {
   struct stat st = {0};
@@ -108,6 +111,7 @@ void checkDir(char *path)
   }
 }
 
+// Crea las rutas para la clasificaion de imagenes
 void checkColorsRoute(char *path)
 {
   char line[256];
@@ -121,9 +125,10 @@ void checkColorsRoute(char *path)
   checkDir(line);
 }
 
+// Parsea el archivo de configuracion
 void getData(int *port, char **colors, char **histo, char **log)
 {
-  FILE *file = fopen("/home/ema0898/Programas/Operativos/Tarea1/config.conf", "r");
+  FILE *file = fopen("/etc/server/config.conf", "r");
 
   char line[256];
   char **arr = NULL;

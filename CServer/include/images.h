@@ -1,7 +1,7 @@
 #ifndef _IMAGES_H
 #define _IMAGES_H
 
-//https://imagemagick.org/script/magick-wand.php
+// Biblioteca para usar los filtros de imagenes
 
 void average_filter(const char *image_path, const char *image_name, const char *destiny_path);
 void median_filter(const char *image_path, const char *image_name, const char *destiny_path);

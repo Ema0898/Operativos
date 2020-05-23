@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <MagickWand/MagickWand.h>
+#include <wand/MagickWand.h>
 
 int cmpfunc(const void *a, const void *b)
 {
