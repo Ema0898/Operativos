@@ -139,15 +139,60 @@ int parse_header(int sock)
   return bytes_received;
 }
 
+void readAndProcess(char *colors, char *histo, FILE *logfile)
+{
+  FILE *file = fopen("../tmp/tmpfile.txt", "r");
+  char line[256];
+  char averageName[50];
+  char medianName[50];
+  char imageInfo[50];
+  char **arr = NULL;
+
+  int counter = 0;
+
+  fputs("Star processing all images...\n", logfile);
+
+  while (fgets(line, sizeof line, file) != NULL) /* read a line */
+  {
+    split(line, '\n', &arr);
+
+    if (counter > 0)
+    {
+      sprintf(imageInfo, "Star classify Image: %s\n", arr[0]);
+      fputs(imageInfo, logfile);
+
+      classify("../tmp/", arr[0], colors);
+
+      sprintf(averageName, "%saverage_filter", histo);
+      sprintf(medianName, "%smedian_filter", histo);
+
+      sprintf(imageInfo, "Applying Average Filter to Image: %s\n", arr[0]);
+      fputs(imageInfo, logfile);
+
+      average_filter("../tmp/", arr[0], averageName);
+
+      sprintf(imageInfo, "Applying Median Filter to Image: %s\n", arr[0]);
+      fputs(imageInfo, logfile);
+
+      median_filter("../tmp/", arr[0], medianName);
+    }
+
+    free(arr);
+    counter++;
+  }
+
+  fputs("Finished processing all images\n", logfile);
+  fputs("Cleaning....\n", logfile);
+  fputs("----------------\n", logfile);
+
+  system("rm ../tmp/image*");
+
+  fclose(file);
+}
+
 void *connection_handler(void *args)
 {
-  printf("Inside thread\n");
   threadArgs *actual_args = args;
-
-  printf("Client Number %d\n", actual_args->clientCounter);
-  printf("Color route %s\n", actual_args->colors);
-  printf("Histo route %s\n", actual_args->histo);
-  printf("Log route %s\n", actual_args->logs);
 
   // int sock = *(int *)socket_desc;
   int contentlengh, bytes_received;
@@ -155,15 +200,11 @@ void *connection_handler(void *args)
   char recv_data[1024];
   char fileName[20];
   char imageRoute[50];
-  char averageName[50];
-  char medianName[50];
   char logFileName[50];
   char clientInfo[100];
 
   sprintf(logFileName, "%sserver.log", actual_args->logs);
   FILE *logFile = fopen(logFileName, "a");
-
-  printf("LOG FILE LOCATION: %s\n", logFileName);
 
   time_t t = time(NULL);
   struct tm *tm = localtime(&t);
@@ -194,9 +235,20 @@ void *connection_handler(void *args)
         exit(3);
       }
 
-      if (!strcmp(recv_data, "Hola"))
+      if (!strcmp(recv_data, "init"))
       {
-        printf("Got text\n");
+        fputs("Process command Received\n", logFile);
+        printf("Process command Received\n");
+
+        system("ls ../tmp -pSr -1 | grep -vE '/|.txt|.client' > ../tmp/tmpfile.txt");
+
+        fputs("Images Sorted\n", logFile);
+        printf("Images Sorted\n");
+        readAndProcess(actual_args->colors, actual_args->histo, logFile);
+
+        printf("Image Processed...\n");
+
+        break;
       }
 
       fwrite(recv_data, 1, bytes_received, fd);
@@ -207,29 +259,7 @@ void *connection_handler(void *args)
     }
     fclose(fd);
 
-    fputs("Image received\n", logFile);
-    fputs("Start to process Image\n", logFile);
-
-    printf("Image Received\n");
-
-    sprintf(averageName, "%saverage_filter", actual_args->histo);
-    sprintf(medianName, "%smedian_filter", actual_args->histo);
-
-    printf("AVERAGE FILTER ROUTE = %s\n", averageName);
-
-    fputs("Start Classify Image...\n", logFile);
-    classify("../tmp/", fileName, actual_args->colors);
-
-    fputs("Applying average filter to  Image...\n", logFile);
-    average_filter("../tmp/", fileName, averageName);
-
-    fputs("Applying median filter to  Image...\n", logFile);
-    median_filter("../tmp/", fileName, medianName);
-
-    printf("Image Processed\n");
-
-    fputs("Image Processed\n", logFile);
-    fputs("----------------\n", logFile);
+    fputs("Image Received\n", logFile);
   }
   else
   {

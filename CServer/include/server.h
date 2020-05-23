@@ -20,5 +20,6 @@ void init_server();
 int run_server();
 void *connection_handler(void *);
 int parse_header(int sock);
+void readAndProcess(char *colors, char *histo, FILE *logfile);
 
 #endif
