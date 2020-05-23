@@ -5,7 +5,6 @@
 
 int main()
 {
-  init_server();
   run_server();
 
   return 0;
