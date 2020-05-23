@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 
-import { StyleSheet, Text, View, PixelRatio, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, PixelRatio, ToastAndroid, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
 
 import ImagePicker from 'react-native-image-picker';
+
 
 var Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 
@@ -20,8 +21,8 @@ export default class Project extends Component {
 
       ImageSource: null,
       data: null,
-      ip:null,
-      port:null,
+      ip:'',
+      port:'',
 
     }
   }
@@ -55,8 +56,7 @@ export default class Project extends Component {
           path: response.uri,
           ImageSource: source,
           data: response.data,
-          ip: response.ip,
-          port: response.port,
+
 
 
         });
@@ -90,6 +90,27 @@ export default class Project extends Component {
       })
   }
 
+  initImageToServer = async () => {
+    ToastAndroid.show(`http://${this.state.ip}:${this.state.port}`, ToastAndroid.SHORT);
+    const msg = 'init';
+    return fetch(`http://${this.state.ip}:${this.state.port}`, {
+      method: 'PUT',
+      body: msg,
+    })
+    .then((res) => { console.log("image success uploaded") })
+    .catch(function(error) {
+      console.log('There has been a problem with your fetch operation: ' + error.message);
+       // ADD THIS THROW error
+        throw error;
+    });
+
+    this.props.writeText(this.state.text)
+
+    this.setState({
+      text: ''
+    })
+}
+
 
   render() {
     return (
@@ -116,8 +137,10 @@ export default class Project extends Component {
             
           placeholder="IP ..."
 
-          onChangeText={ip => this.setState({ ip:ip })}
+          onChangeText={ip => this.setState({ ip })}
           
+          value = {this.state.ip} 
+
           underlineColorAndroid='transparent'
 
           style={styles.TextInputStyle}
@@ -128,7 +151,9 @@ export default class Project extends Component {
 
           placeholder="Port ..."
 
-          onChangeText={port => this.setState({ port: port })}
+          onChangeText={port => this.setState({ port })}
+
+          value = {this.state.port} 
 
           underlineColorAndroid='transparent'
 
@@ -141,6 +166,13 @@ export default class Project extends Component {
           <Text style={styles.TextStyle}> SEND IMAGE </Text>
 
         </TouchableOpacity>
+
+        <TouchableOpacity onPress={this.initImageToServer} activeOpacity={0.6} style={styles.button} >
+
+          <Text style={styles.TextStyle}> INIT PROCESS </Text>
+
+        </TouchableOpacity>
+
 
       </View>
     );

@@ -26,7 +26,7 @@ realFileBtn.addEventListener("change", function(){
     var imageName = file.name;
     //Var to compare if image is .PNG
                             //gif|jpg|png|jpeg
-    var isGood = (/\.(?=png)/gi).test(imageName);
+    var isGood = (/\.(?=gif|jpg|png|jpeg)/gi).test(imageName);
 
     //if file image is PNG
     if (isGood){
@@ -86,4 +86,35 @@ $(document).ready(function(){
             }
         });
     });
+
+    //Function send image to server
+    $('#init-button').click(function(){
+        //Take information of input text IP
+        var ip = $('#ip').val();
+        //Take information of input text PORT
+        var port = $('#port').val();
+        $.ajax({
+            //url of server
+            url: 'http://'+ip+':'+port,
+            //Type of request POST
+            type: 'post',
+            //Send message
+            data: 'init\0',
+            //Content Type text/plain, server reads this format
+            contentType: 'text/plain',
+            //No proccess Data
+            processData: false,
+            //Succes process
+            success: function(response){
+                if(response !=0){
+                    alert('Init');
+                }else{
+                    alert('Not Init');
+                }
+            }
+        });
+    });
+
+
 });
+
