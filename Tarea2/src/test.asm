@@ -1,14 +1,3 @@
-org 0x8000
-bits 16 
-
-;precompiler constant
-%define entityArraySize 164
-;Let's begin by going into graphic mode
-init: 
-
-
-call initGraphics
-
 ;Now let's register some custom interrupt handlers
 call registerInterruptHandlers
 
@@ -56,6 +45,8 @@ gameLoop:
 	mov bx, 50/2 - 12/2 - 1     ;center player image
 	call drawImage
 	; END OF PLAYER DRAWING CODE
+
+	call drawBullet
 	
 	call copyBufferOver ;draw frame to screen
 	
@@ -64,6 +55,15 @@ gameLoop:
 	call synchronize ;synchronize emulator and real application through delaying
 	
 jmp gameLoop
+
+bulletOffsetX db 0
+
+drawBullet:
+	mov ax, 80/2 - 9/2 - 1
+	mov bx, 50/2 - 12/2 - 1
+	mov si, bulletImg_0
+	call drawImage
+	ret
 
 jmp $
 
@@ -169,10 +169,8 @@ pauseGameFunc:
 	jmp pauseGameFunc
 
 reset:
-	;call initMap
-	;call drawMap
-	jmp init
-	
+	call initMap
+	call drawMap
 
 canWalk db 0
 gameControls:
@@ -303,7 +301,6 @@ synchronize:
 	popa
 	ret
 
-
 ;cx, dx = xpos, zpos, si = animation
 ;eax == 0 => success, else failed
 addEntity:
@@ -356,7 +353,7 @@ drawBlock:
 	add bx, 50/2 - 12/2 - 1   ;relative to screen image drawing code for z position
 	call drawImage            ;draw image to buffer
 	.skip:
-		clc
+	clc
 	ret
 	
 ;set the position of the player to x=cx, z=dx
@@ -369,24 +366,10 @@ setSpawn:
 	
 ;spawn the coins add set the spawn position of the player
 initMap:
-
-	mov si, destructable_wall
-	mov bp, addEntity
-	mov ah, 'W'
-	call iterateMap  ; iterate the map and add an eagle at every 'A' on the map
-
 	mov si, coinImg
 	mov bp, addEntity
 	mov ah, 'X'
 	call iterateMap  ; iterate the map and add a coin at every 'X' on the map
-
-	mov si, eagleImg
-	mov bp, addEntity
-	mov ah, 'A'
-	call iterateMap  ; iterate the map and add an eagle at every 'A' on the map
-
-	
-
 	call spawnPlayer ; set spawn for player
 	ret
 	
@@ -401,7 +384,6 @@ drawMap:
 	mov bp, drawBlock
 	mov ah, ' '
 	call iterateMap ; iterate the map and add a tile at every ' ' on the map
-
 	ret
 	
 ; si = player X, bx = player Y
@@ -409,7 +391,6 @@ collideMap:
 	mov bp, blockCollison
 	mov ah, '0'
 	call iterateMap ; iterate the map and check for a collision with a '0'
-
 	ret
 	
 ;set the spawn of the player to the field 'P'
@@ -422,7 +403,6 @@ spawnPlayer:
 %define tileWidth      8
 %define ASCIImapWidth  64
 %define ASCIImapHeight 64
-
 ;bp = function to call, ah = search for, si = parameter for bp function
 iterateMap:
 	mov di, ASCIImap
@@ -476,7 +456,7 @@ blockCollison:
 	pop cx
 	ret
 	
-%include "./src/buffer.asm"
+%include "buffer.asm"
 
 
 ;game value
@@ -503,6 +483,11 @@ box_PosX  dw 0x10            ;position of box (x)
 box_PosZ  dw 0x10            ;position of box (z)
 box_AnimC dw 0               ;animation counter
 
+bullet:
+bullet_Anim  dw bulletImg       ;pointer to animation
+bullet_PosX  dw 0x32            ;position of box (x)
+bullet_PosZ  dw 0x32            ;position of box (z)
+
 ;other entity structures:
 entityArrayMem:
 	resw entityArraySize*4
@@ -512,42 +497,48 @@ playerImg_front:
 	dw 5
 	dw 20
 	dw playerImg_front_0
+	dw playerImg_front_1
 	dw playerImg_front_0
-	dw playerImg_front_0
-	dw playerImg_front_0
+	dw playerImg_front_2
 	dw 0
 	
 playerImg_back:
     dw 5
 	dw 20
 	dw playerImg_back_0
+	dw playerImg_back_1
 	dw playerImg_back_0
-	dw playerImg_back_0
-	dw playerImg_back_0
+	dw playerImg_back_2
 	dw 0
 	
 playerImg_right:
     dw 5
 	dw 20
 	dw playerImg_right_0
+	dw playerImg_right_1
 	dw playerImg_right_0
-	dw playerImg_right_0
-	dw playerImg_right_0
+	dw playerImg_right_2
 	dw 0
 	
 playerImg_left:
 	dw 5
 	dw 20
 	dw playerImg_left_0
+	dw playerImg_left_1
 	dw playerImg_left_0
-	dw playerImg_left_0
-	dw playerImg_left_0
+	dw playerImg_left_2
 	dw 0
 	
 boxImg:
 	dw 1            ;time per frames
 	dw 1            ;time of animation
 	dw boxImg_0     ;frames
+	dw 0            ;zero end frame
+
+bulletImg:
+	dw 1            ;time per frames
+	dw 1            ;time of animation
+	dw bulletImg_0     ;frames
 	dw 0            ;zero end frame
 	
 coinImg:
@@ -559,41 +550,32 @@ coinImg:
 	dw coin_1       ;frames
 	dw 0            ;zero end frame
 
-eagleImg:
-	dw 1
-	dw 1
-	dw eagleImg_0
-	dw 0
-
-destructable_wall:
-	dw 1
-	dw 1
-	dw wall_0
-	dw 0
-
 playerImg_front_0 incbin "img/player_front_0.bin"
-
+playerImg_front_1 incbin "img/player_front_1.bin"
+playerImg_front_2 incbin "img/player_front_2.bin"
 playerImg_back_0  incbin "img/player_back_0.bin"
-
+playerImg_back_1  incbin "img/player_back_1.bin"
+playerImg_back_2  incbin "img/player_back_2.bin"
 playerImg_right_0 incbin "img/player_right_0.bin"
-
+playerImg_right_1 incbin "img/player_right_1.bin"
+playerImg_right_2 incbin "img/player_right_2.bin"
 playerImg_left_0  incbin "img/player_left_0.bin"
-
+playerImg_left_1  incbin "img/player_left_1.bin"
+playerImg_left_2  incbin "img/player_left_2.bin"
 
 coin_0  incbin "img/coin_0.bin"
 coin_1  incbin "img/coin_1.bin"
 coin_2  incbin "img/coin_2.bin"
 
-eagleImg_0 incbin "img/eagle.bin"
-
 boxImg_0         incbin "img/box.bin"
-wall_0           incbin "img/wall.bin"
 tileImg_0        incbin "img/tile.bin"
+bulletImg_0			 incbin "img/coin_0.bin"
 
-ASCIImap          incbin "img/maptank.bin"
+ASCIImap          incbin "img/map.bin"
 db 0
 
 %assign usedMemory ($-$$)
 %assign usableMemory (512*32)
 %warning [usedMemory/usableMemory] Bytes used
-times (512*32)-($-$$) db 0 
+times (512*32)-($-$$) db 0 ;kernel must have size multiple of 512 so let's pad it to the correct size
+;times (512*1000)-($-$$) db 0 ;toggle this to use in bochs
