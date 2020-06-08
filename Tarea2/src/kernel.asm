@@ -2,7 +2,7 @@ org 0x8000
 bits 16 
 
 ;precompiler constant
-%define entityArraySize 16
+%define entityArraySize 164
 ;Let's begin by going into graphic mode
 call initGraphics
 
@@ -328,6 +328,12 @@ setSpawn:
 	
 ;spawn the coins add set the spawn position of the player
 initMap:
+
+	mov si, destructable_wall
+	mov bp, addEntity
+	mov ah, 'W'
+	call iterateMap  ; iterate the map and add an eagle at every 'A' on the map
+
 	mov si, coinImg
 	mov bp, addEntity
 	mov ah, 'X'
@@ -337,6 +343,8 @@ initMap:
 	mov bp, addEntity
 	mov ah, 'A'
 	call iterateMap  ; iterate the map and add an eagle at every 'A' on the map
+
+	
 
 	call spawnPlayer ; set spawn for player
 	ret
@@ -463,36 +471,36 @@ playerImg_front:
 	dw 5
 	dw 20
 	dw playerImg_front_0
-	dw playerImg_front_1
 	dw playerImg_front_0
-	dw playerImg_front_2
+	dw playerImg_front_0
+	dw playerImg_front_0
 	dw 0
 	
 playerImg_back:
     dw 5
 	dw 20
 	dw playerImg_back_0
-	dw playerImg_back_1
 	dw playerImg_back_0
-	dw playerImg_back_2
+	dw playerImg_back_0
+	dw playerImg_back_0
 	dw 0
 	
 playerImg_right:
     dw 5
 	dw 20
 	dw playerImg_right_0
-	dw playerImg_right_1
 	dw playerImg_right_0
-	dw playerImg_right_2
+	dw playerImg_right_0
+	dw playerImg_right_0
 	dw 0
 	
 playerImg_left:
 	dw 5
 	dw 20
 	dw playerImg_left_0
-	dw playerImg_left_1
 	dw playerImg_left_0
-	dw playerImg_left_2
+	dw playerImg_left_0
+	dw playerImg_left_0
 	dw 0
 	
 boxImg:
@@ -516,18 +524,20 @@ eagleImg:
 	dw eagleImg_0
 	dw 0
 
+destructable_wall:
+	dw 1
+	dw 1
+	dw wall_0
+	dw 0
+
 playerImg_front_0 incbin "img/player_front_0.bin"
-playerImg_front_1 incbin "img/player_front_1.bin"
-playerImg_front_2 incbin "img/player_front_2.bin"
+
 playerImg_back_0  incbin "img/player_back_0.bin"
-playerImg_back_1  incbin "img/player_back_1.bin"
-playerImg_back_2  incbin "img/player_back_2.bin"
+
 playerImg_right_0 incbin "img/player_right_0.bin"
-playerImg_right_1 incbin "img/player_right_1.bin"
-playerImg_right_2 incbin "img/player_right_2.bin"
+
 playerImg_left_0  incbin "img/player_left_0.bin"
-playerImg_left_1  incbin "img/player_left_1.bin"
-playerImg_left_2  incbin "img/player_left_2.bin"
+
 
 coin_0  incbin "img/coin_0.bin"
 coin_1  incbin "img/coin_1.bin"
@@ -536,12 +546,13 @@ coin_2  incbin "img/coin_2.bin"
 eagleImg_0 incbin "img/eagle.bin"
 
 boxImg_0         incbin "img/box.bin"
+wall_0           incbin "img/wall.bin"
 tileImg_0        incbin "img/tile.bin"
 
-ASCIImap          incbin "img/map.bin"
+ASCIImap          incbin "img/maptank.bin"
 db 0
 
 %assign usedMemory ($-$$)
-%assign usableMemory (512*16)
+%assign usableMemory (512*32)
 %warning [usedMemory/usableMemory] Bytes used
 times (512*32)-($-$$) db 0 

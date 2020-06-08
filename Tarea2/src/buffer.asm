@@ -13,7 +13,7 @@ resetBuffer:
 	pusha
 	mov cx, 2400
 	;xor ax, ax ;this will make the background black
-	mov ax, 0xC3C3 
+	mov ax, 0xFFFF
 	mov di, [screenPos]
 	rep stosw
 	popa
