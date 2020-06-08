@@ -1,14 +1,14 @@
 %ifndef CODE_BUFFER
 %define CODE_BUFFER
 	
-;set's graphic mode	
+; Set graphic mode	
 initGraphics:
 	mov ah, 0   
 	mov al, 13h ; 320x200
 	int  0x10
 	ret
 
-;resets screen to full black
+; resets screen to full black
 resetBuffer:
 	pusha
 	mov cx, 2400
@@ -19,7 +19,7 @@ resetBuffer:
 	popa
 	ret
 
-;screen has size 320x200 but buffer only 80x60
+; Screen has size 320x200 but buffer only 80x60
 copyBufferOver:
 	pusha
 	push es
@@ -54,7 +54,7 @@ copyBufferOver:
 
 	ret
 	
-;si = position of image, ax = xpos, bx = ypos
+; si = position of image, ax = xpos, bx = ypos
 drawImage:
 	pusha
 	xor di, di

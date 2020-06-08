@@ -315,7 +315,7 @@ drawBlock:
 	add bx, 50/2 - 12/2 - 1   ;relative to screen image drawing code for z position
 	call drawImage            ;draw image to buffer
 	.skip:
-	clc
+		clc
 	ret
 	
 ;set the position of the player to x=cx, z=dx
@@ -332,6 +332,12 @@ initMap:
 	mov bp, addEntity
 	mov ah, 'X'
 	call iterateMap  ; iterate the map and add a coin at every 'X' on the map
+
+	mov si, eagleImg
+	mov bp, addEntity
+	mov ah, 'A'
+	call iterateMap  ; iterate the map and add an eagle at every 'A' on the map
+
 	call spawnPlayer ; set spawn for player
 	ret
 	
@@ -346,6 +352,7 @@ drawMap:
 	mov bp, drawBlock
 	mov ah, ' '
 	call iterateMap ; iterate the map and add a tile at every ' ' on the map
+
 	ret
 	
 ; si = player X, bx = player Y
@@ -353,6 +360,7 @@ collideMap:
 	mov bp, blockCollison
 	mov ah, '0'
 	call iterateMap ; iterate the map and check for a collision with a '0'
+
 	ret
 	
 ;set the spawn of the player to the field 'P'
@@ -365,6 +373,7 @@ spawnPlayer:
 %define tileWidth      8
 %define ASCIImapWidth  64
 %define ASCIImapHeight 64
+
 ;bp = function to call, ah = search for, si = parameter for bp function
 iterateMap:
 	mov di, ASCIImap
@@ -501,6 +510,12 @@ coinImg:
 	dw coin_1       ;frames
 	dw 0            ;zero end frame
 
+eagleImg:
+	dw 1
+	dw 1
+	dw eagleImg_0
+	dw 0
+
 playerImg_front_0 incbin "img/player_front_0.bin"
 playerImg_front_1 incbin "img/player_front_1.bin"
 playerImg_front_2 incbin "img/player_front_2.bin"
@@ -518,6 +533,8 @@ coin_0  incbin "img/coin_0.bin"
 coin_1  incbin "img/coin_1.bin"
 coin_2  incbin "img/coin_2.bin"
 
+eagleImg_0 incbin "img/eagle.bin"
+
 boxImg_0         incbin "img/box.bin"
 tileImg_0        incbin "img/tile.bin"
 
@@ -527,4 +544,4 @@ db 0
 %assign usedMemory ($-$$)
 %assign usableMemory (512*16)
 %warning [usedMemory/usableMemory] Bytes used
-times (512*16)-($-$$) db 0 
+times (512*32)-($-$$) db 0 
