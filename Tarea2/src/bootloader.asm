@@ -29,6 +29,10 @@ FileSystem		    db "FAT12   "	    ; File system type: don't change!
 
 start: 
 
+  mov ah, 0   
+	mov al, 13h ; 320x200
+	int  0x10
+
   mov si, welcomeMsg  
   call printString
  
@@ -88,7 +92,7 @@ keyboardINTListener: ;interrupt handler for keyboard events
 printCharacter:
 
 	mov bh, 0x00 
-	mov bl, 0x00 
+	mov bl, 0x0F
 	mov ah, 0x0E 
 	int 0x10 
 	ret	
@@ -126,8 +130,8 @@ end:
 
 errorMsg db "Failed to load...", 0
 welcomeMsg db "Welcome to bootable tanks", 0xA, 0xD, "Press enter to play", 0xA, 0xD, 0
-times 510-($-$$) db 0
+times 510 - ($ - $$) db 0
 
-;Begin MBR Signature
-db 0x55 ;byte 511 = 0x55
-db 0xAA ;byte 512 = 0xAA
+; Begin MBR Signature
+db 0x55 ; byte 511 = 0x55
+db 0xAA ; byte 512 = 0xAA
