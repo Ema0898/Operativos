@@ -3,6 +3,12 @@ bits 16
 
 %define entityArraySize 256
 
+mov ax, 10
+mov [enemyPosX], ax
+
+mov ax, -40
+mov [enemyPosZ], ax
+
 init: 
 	; Start graphic mode
 	call initGraphics
@@ -56,6 +62,12 @@ gameLoop:
 	mov bx, (50 / 2) - (12 / 2) - 1     ; center player image
 	call drawImage
 
+	mov ax, [enemyPosX]    ;center player image
+	mov bx, [enemyPosZ]    ;center player image
+	sub ax, 2
+	sub bx, 2
+	mov si, enemyImage
+	call drawImage
 	
 	call copyBufferOver 						; draw frame to screen
 	
@@ -152,9 +164,9 @@ checkForCollision:
 
 	.noMapCollision:
 		mov byte [canWalk], 1
-		mov word [di]   ,bp  					; update the animation in use
-		mov word [di + 2] ,cx  				; update x pos
-		mov word [di + 4] ,dx  				; update y pos
+		mov word [di],  bp  					; update the animation in use
+		mov word [di + 2], cx  				; update x pos
+		mov word [di + 4], dx  				; update y pos
 		popa                 					; reload old register state
 		
 	ret
@@ -195,13 +207,25 @@ gameControls:
 	cmp byte [pressRightArrow], 1   ; move x+1 if 'd' is pressed 
 	jne .nd
 	inc cx
-	mov bp, playerImg_right
+	mov bp, playerImgRight
+
+	pusha
+	mov cx, word [enemyPosX] 				;set cx to enemy x
+	inc cx
+	mov [enemyPosX], cx
+	popa
 
 	.nd:
 		cmp byte [pressLeftArrow], 1 	; move x-1 if 'a' is pressed
 		jne .na
 		dec cx
-		mov bp, playerImg_left
+		mov bp, playerImgLeft
+
+		pusha
+		mov cx, word [enemyPosX] 	 ; set cx to enemy x
+		dec cx
+		mov [enemyPosX], cx
+		popa
 
 	.na:
 		call checkForCollision 				; check if player would collide on new position
@@ -218,13 +242,25 @@ gameControls:
 	cmp byte [pressUpArrow], 1 			; try to move z-1 if 'w' is pressed
 	jne .nw
 	dec dx
-	mov bp, playerImg_back
+	mov bp, playerImgBack
+
+	pusha
+	mov cx, word [enemyPosZ] 			; set cx to enemy z
+	inc cx
+	mov [enemyPosZ], cx
+	popa
 
 	.nw:
 		cmp byte [pressDownArrow], 1 	; try to move z+1 if 's' is pressed
 		jne .ns
 		inc dx
 		mov bp, playerImgFront
+
+		pusha
+		mov cx, word [enemyPosZ] 		 ; set cx to enemy z
+		dec cx
+		mov [enemyPosZ], cx
+		popa
 
 	.ns:
 		call checkForCollision 				; check if player would collide on new position
@@ -264,36 +300,36 @@ keyboardINTListener:
 	dec bx 														; bx = 1: key up event
 
 	.keyDown:
-		cmp al,0x4b ;a
+		cmp al, 0x4b ;a
 		jne .check1         
 		mov byte [cs:pressLeftArrow], bl ; use cs overwrite because we don't know where the data segment is
 	.check1:
-		cmp al,0x4d 										 ; left arrow
+		cmp al, 0x4d 										 ; left arrow
 		jne .check2
 		mov byte [cs:pressRightArrow], bl
 
 	.check2:
-		cmp al,0x48 										 ; right arrow
+		cmp al, 0x48 										 ; right arrow
 		jne .check3
 		mov byte [cs:pressUpArrow], bl
 
 	.check3:
-		cmp al,0x50 									   ; up arrow
+		cmp al, 0x50 									   ; up arrow
 		jne .check4
 		mov byte [cs:pressDownArrow], bl
 
 	.check4:
-		cmp al,0x39 										 ; down arrow
+		cmp al, 0x39 										 ; down arrow
 		jne .check5
 		mov byte [cs:pressSpacebar], bl
 
 	.check5:
-		cmp al,0x26 										 ; l
+		cmp al, 0x26 										 ; l
 		jne .check6
 		mov byte [cs:pressL], bl
 
 	.check6:
-		cmp al,0x13     								 ; r
+		cmp al, 0x13     								 ; r
 		jne .check7
 		mov byte [cs:pressR], bl
 
@@ -388,17 +424,12 @@ initMap:
 	mov si, enemy
 	mov bp, addEntity
 	mov ah, 'E'
-	call iterateMap  				; iterate the map and add an eagle at every 'W' on the map
+	call iterateMap  				; iterate the map and add an eagle at every 'E' on the map
 
 	mov si, destructableWall
 	mov bp, addEntity
 	mov ah, 'W'
 	call iterateMap  				; iterate the map and add an eagle at every 'W' on the map
-
-	; mov si, coinImg
-	; mov bp, addEntity
-	; mov ah, 'X'
-	; call iterateMap  			; iterate the map and add a coin at every 'X' on the map
 
 	mov si, eagleImg
 	mov bp, addEntity
@@ -521,6 +552,10 @@ player:
 	playerPosZ  dw 0x32                ; position of player (z)
 	playerAnimC dw 0               		 ; animation counter
 
+enemyStruct:
+	enemyPosX  dw 0x10            ; position of enemy (x)
+	enemyPosZ  dw 0x10            ; position of enemy (z)
+
 ; Other entity structures:
 entityArrayMem:
 	resw entityArraySize * 4
@@ -535,7 +570,7 @@ playerImgFront:
 	dw playerImgFront0
 	dw 0
 	
-playerImg_back:
+playerImgBack:
   dw 5
 	dw 20
 	dw playerImgBack0
@@ -544,7 +579,7 @@ playerImg_back:
 	dw playerImgBack0
 	dw 0
 	
-playerImg_right:
+playerImgRight:
   dw 5
 	dw 20
 	dw playerImgRight0
@@ -553,7 +588,7 @@ playerImg_right:
 	dw playerImgRight0
 	dw 0
 	
-playerImg_left:
+playerImgLeft:
 	dw 5
 	dw 20
 	dw playerImgLeft0
@@ -583,7 +618,7 @@ destructableWall:
 enemy:
 	dw 1
 	dw 1
-	dw enemy_image
+	dw enemyImage
 	dw 0
 
 playerImgFront0 	incbin "img/player_front_0.bin"
@@ -596,7 +631,7 @@ eagleImg0 				incbin "img/eagle.bin"
 boxImg0           incbin "img/box.bin"
 wall0             incbin "img/wall.bin"
 tileImg0          incbin "img/tile.bin"
-enemy_image		  incbin "img/enemy.bin"
+enemyImage		  incbin "img/enemy.bin"
 
 ASCIImap          incbin "img/maptank.bin"
 ;db 0
