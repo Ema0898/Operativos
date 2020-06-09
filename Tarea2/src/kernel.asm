@@ -1,7 +1,7 @@
 org 0x8000
 bits 16 
 
-%define entityArraySize 164
+%define entityArraySize 256
 
 init: 
 	; Start graphic mode
@@ -385,6 +385,11 @@ setSpawn:
 	
 ; Spawn the enemies and eagle, add set the spawn position of the player
 initMap:
+	mov si, enemy
+	mov bp, addEntity
+	mov ah, 'E'
+	call iterateMap  				; iterate the map and add an eagle at every 'W' on the map
+
 	mov si, destructableWall
 	mov bp, addEntity
 	mov ah, 'W'
@@ -575,6 +580,12 @@ destructableWall:
 	dw wall0
 	dw 0
 
+enemy:
+	dw 1
+	dw 1
+	dw enemy_image
+	dw 0
+
 playerImgFront0 	incbin "img/player_front_0.bin"
 playerImgBack0  	incbin "img/player_back_0.bin"
 playerImgRight0 	incbin "img/player_right_0.bin"
@@ -585,6 +596,7 @@ eagleImg0 				incbin "img/eagle.bin"
 boxImg0           incbin "img/box.bin"
 wall0             incbin "img/wall.bin"
 tileImg0          incbin "img/tile.bin"
+enemy_image		  incbin "img/enemy.bin"
 
 ASCIImap          incbin "img/maptank.bin"
 ;db 0
