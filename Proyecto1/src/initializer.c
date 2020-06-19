@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   key_t key_semaphore;
   int id_semaphore;
 
-  key_semaphore = ftok("/bin/cat", 33);
+  key_semaphore = ftok("/bin/ls", 33);
 
   if (key_semaphore == -1)
   {
@@ -81,13 +81,26 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  id_semaphore = semget(key_semaphore, 10, 0600 | IPC_CREAT);
+  id_semaphore = semget(key_semaphore, buffer_size, 0600 | IPC_CREAT);
 
   if (id_semaphore == -1)
   {
     printf("Can't create semaphore\n");
     exit(0);
   }
+
+  struct sembuf operation;
+
+  operation.sem_op = 1;
+  operation.sem_flg = 0;
+
+  for (int i = 0; i < buffer_size; ++i)
+  {
+    operation.sem_num = i;
+
+    semop(id_semaphore, &operation, 1);
+  }
+  
 
   /* Not necesary, test only */
 

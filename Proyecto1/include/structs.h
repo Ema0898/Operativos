@@ -4,7 +4,7 @@
 typedef struct
 {
   int pid;
-  int magic_numer;
+  int magic_number;
   char date[50];
   char hour[50];
 } message;
