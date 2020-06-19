@@ -5,10 +5,17 @@
 
 typedef struct
 {
-  int data1;
-  int data2;
-  char data3[10];
+  int pid;
+  int magic_numer;
+  char date[50];
+  char hour[50];
 } message;
+
+typedef struct
+{
+  int producers;
+  int consumers;
+} global_variables;
 
 int main()
 {
@@ -37,6 +44,37 @@ int main()
     exit(0);
   }
 
+  int gv_shm_id;
+  global_variables *memory2 = NULL;
+  key_t key2;
+
+  key2 = ftok("/bin/ls", 33);
+
+  if (key2 == -1)
+  {
+    printf("Shared Memory Key is Invalid\n");
+    exit(0);
+  }
+
+  gv_shm_id = shmget(key2, sizeof(global_variables), 0777);
+
+  if (gv_shm_id == -1)
+  {
+    printf("Can't create shared memory for global variables\n");
+    exit(0);
+  }
+
+  /* Not necesary, test only */
+  memory2 = (global_variables *)shmat(gv_shm_id, (char *)0, 0);
+  if (memory2 == NULL)
+  {
+    printf("Can't get shared memory for global variable\n");
+    exit(0);
+  }
+
+  printf("Global variable for producers = %d\n", memory2->producers);
+  printf("Global variable for consumer = %d\n", memory2->consumers);
+
   // for (int i = 0; i < 10; i++)
   // {
   //   printf("Read data1 = %d\n", memory[i].data1);
@@ -45,18 +83,20 @@ int main()
   //   sleep(1);
   // }
 
-  printf("Read data1 = %d\n", memory[1].data1);
-  printf("Read data2 = %d\n", memory[1].data2);
-  printf("Read data3 = %s\n", memory[1].data3);
+  printf("Read data1 = %d\n", memory[1].pid);
+  printf("Read data2 = %d\n", memory[1].magic_numer);
+  printf("Read data3 = %s\n", memory[1].date);
 
-  printf("Read data1 = %d\n", memory[2].data1);
-  printf("Read data2 = %d\n", memory[2].data2);
-  printf("Read data3 = %s\n", memory[2].data3);
+  printf("Read data1 = %d\n", memory[2].pid);
+  printf("Read data2 = %d\n", memory[2].magic_numer);
+  printf("Read data3 = %s\n", memory[2].date);
 
   if (id_memory != -1)
   {
     shmdt((char *)memory);
   }
+
+  shmdt((char *)memory2);
 
   return 0;
 }

@@ -90,14 +90,43 @@ int main(int argc, char *argv[])
   }
 
   /* Not necesary, test only */
+  memory2 = (global_variables *)shmat(gv_shm_id, (char *)0, 0);
+  if (memory2 == NULL)
+  {
+    printf("Can't get shared memory for global variable\n");
+    exit(0);
+  }
 
-  // shmdt((char *)memory);
-  // shmctl(id_memory, IPC_RMID, (struct shmid_ds *)NULL);
+  memory2->producers = 10;
+  memory2->consumers = 10;
 
-  // shmdt((char *)memory2);
-  // shmctl(gv_shm_id, IPC_RMID, (struct shmid_ds *)NULL);
+  memory = (message *)shmat(id_memory, (char *)0, 0);
+  if (memory == NULL)
+  {
+    printf("Can't get shared memory\n");
+    exit(0);
+  }
 
-  // semctl(id_semaphore, 0, IPC_RMID, NULL);
+  for (int i = 0; i < 10; i++)
+  {
+    for (int j = 0; j < 100; j++)
+    {
+      memory[j].pid = 10 * j;
+      memory[j].magic_numer = 20 * j;
+      strcpy(memory[j].date, "Hola");
+    }
+    printf("Write %d on shared memory\n", i);
+
+    sleep(1);
+  }
+
+  shmdt((char *)memory);
+  shmctl(id_memory, IPC_RMID, (struct shmid_ds *)NULL);
+
+  shmdt((char *)memory2);
+  shmctl(gv_shm_id, IPC_RMID, (struct shmid_ds *)NULL);
+
+  semctl(id_semaphore, 0, IPC_RMID, NULL);
 
   return 0;
 }

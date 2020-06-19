@@ -51,5 +51,5 @@ int main()
     sleep(1);
   }
 
-  semctl(id_semaphore, 0, IPC_RMID, &arg);
+  semctl(id_semaphore, 0, IPC_RMID, NULL);
 }
