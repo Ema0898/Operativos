@@ -1,36 +1,111 @@
-#include <sys/shm.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <math.h>
+#include <time.h>
+#include <sys/sem.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <string.h>
+#include <structs.h>
 
-typedef struct
-{
-  int pid;
-  int magic_numer;
-  char date[50];
-  char hour[50];
-} message;
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+// The union is already defined in sys/sem.h
+#else
+union semun {
+  int val;
+  struct semid_ds *buf;
+  unsigned short int *array;
+  struct seminfo *__buf;
+};
+#endif
 
-typedef struct
+double U_Random (){/* generates a 0 ~ Random number between 1 */
+  double f;
+  srand((unsigned)time(NULL));
+  f = (float) (rand () % 100 );
+  /* Printf ("% fn", f );*/
+  return f / 100;
+}
+ 
+int possion ()/* generates a random number with a Poisson distribution. Lamda is the average number */
 {
-  int producers;
-  int consumers;
-} global_variables;
+  int lambda = 1, k = 0;
+  double p = 1.0;
+  double l = exp(-lambda);/* it is defined as long double for precision, and exp (-Lambda) is a decimal near 0 */  
+  while (p >= l) {
+    double u = U_Random ();
+    p *= u;
+    k++;
+  }
+  return k-1;
+}
 
-int main()
-{
+//Read
+void read_msg(int index, struct sembuf operation, int id, message *memory){
+  // Down
+  semop(id, &operation, 1);
+  
+  // Read write
+  printf("PID = %d\n", memory[index].pid);
+  printf("Magic Number = %d\n", memory[index].magic_number);
+  printf("Date = %s \n", memory[index].date);
+
+  // Up
+  operation.sem_op = 1;
+  semop(id, &operation, 1);
+}
+
+int main(int argc, char* argv[]){
+  //La vara de semaforos
   key_t key;
+  int id_semaphore;
+  struct sembuf operation;
+  union semun arg;
+
+  char* buffer_name = argv[1];
+  float seconds = atof(argv[2]);
+
+  if(argc != 3){
+    printf("Cantidad de argumentos incorrecta\n");
+    exit(0);
+  }
+
+  key = ftok("/bin/cat", 33);
+
+  if (key == -1)
+  {
+    printf("Can't get semaphore key\n");
+    exit(0);
+  }
+
+  id_semaphore = semget(key, 1024, 0600);
+
+  if (id_semaphore == -1)
+  {
+    printf("Can't create semaphore\n");
+    exit(0);
+  }
+
+  arg.val = 0;
+  semctl(id_semaphore, 0, SETVAL, &arg);
+
+  operation.sem_flg = 0;
+  
+  //Memory
+  key_t key_memory;
   int id_memory;
   message *memory = NULL;
 
-  key = ftok("/home/ema0898/Programas/Operativos/Proyecto1/test", 33);
-  if (key == -1)
+  key_memory = ftok(buffer_name, 33);
+  if (key_memory == -1)
   {
     printf("Shared Memory Key is Invalid\n");
     exit(0);
   }
 
-  id_memory = shmget(key, sizeof(message) * 1024, 0777);
+  id_memory = shmget(key_memory, sizeof(message) * 1024, 0777);
   if (id_memory == -1)
   {
     printf("Shared Memory Id is Invalid\n");
@@ -44,59 +119,20 @@ int main()
     exit(0);
   }
 
-  int gv_shm_id;
-  global_variables *memory2 = NULL;
-  key_t key2;
+  //Bloques de memoria
+  int index;
 
-  key2 = ftok("/bin/ls", 33);
+  while(1) {
+    int p = possion();
+    sleep(p);
 
-  if (key2 == -1)
-  {
-    printf("Shared Memory Key is Invalid\n");
-    exit(0);
+    //Leer en memoria 
+    index = rand() % 1023;
+    operation.sem_num = 0;
+    operation.sem_op = -1;
+
+    read_msg(0, operation, id_semaphore, memory);    
   }
-
-  gv_shm_id = shmget(key2, sizeof(global_variables), 0777);
-
-  if (gv_shm_id == -1)
-  {
-    printf("Can't create shared memory for global variables\n");
-    exit(0);
-  }
-
-  /* Not necesary, test only */
-  memory2 = (global_variables *)shmat(gv_shm_id, (char *)0, 0);
-  if (memory2 == NULL)
-  {
-    printf("Can't get shared memory for global variable\n");
-    exit(0);
-  }
-
-  printf("Global variable for producers = %d\n", memory2->producers);
-  printf("Global variable for consumer = %d\n", memory2->consumers);
-
-  // for (int i = 0; i < 10; i++)
-  // {
-  //   printf("Read data1 = %d\n", memory[i].data1);
-  //   printf("Read data2 = %d\n", memory[i].data2);
-  //   printf("Read data3 = %s\n", memory[i].data3);
-  //   sleep(1);
-  // }
-
-  printf("Read data1 = %d\n", memory[1].pid);
-  printf("Read data2 = %d\n", memory[1].magic_numer);
-  printf("Read data3 = %s\n", memory[1].date);
-
-  printf("Read data1 = %d\n", memory[2].pid);
-  printf("Read data2 = %d\n", memory[2].magic_numer);
-  printf("Read data3 = %s\n", memory[2].date);
-
-  if (id_memory != -1)
-  {
-    shmdt((char *)memory);
-  }
-
-  shmdt((char *)memory2);
 
   return 0;
 }

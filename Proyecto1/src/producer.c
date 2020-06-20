@@ -21,14 +21,14 @@ union semun {
 };
 #endif
 
-double ran_expo(double lambda){
+double ran_expo(double lambda) {
   double u;
   u = rand() / (RAND_MAX + 1.0);
   return -log(1- u) / lambda;
 }  
 
 //Write message
-void write_msg(int data1, int data2, char* data3, int index, struct sembuf operation,int id, message *memory){
+void write_msg(int data1, int data2, char* data3, int index, struct sembuf operation,int id, message *memory) {
   // Down
   semop(id, &operation, 1);
   
@@ -43,7 +43,6 @@ void write_msg(int data1, int data2, char* data3, int index, struct sembuf opera
 }
 
 int main(int argc, char* argv[]) {
-  
   // Semaforos
   key_t key;
   int id_semaphore;
@@ -58,7 +57,7 @@ int main(int argc, char* argv[]) {
     exit(0);
   }
 
-  key = ftok("/bin/ls", 33);
+  key = ftok("/bin/cat", 33);
 
   if (key == -1)
   {

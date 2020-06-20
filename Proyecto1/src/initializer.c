@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   key_t key_semaphore;
   int id_semaphore;
 
-  key_semaphore = ftok("/bin/ls", 33);
+  key_semaphore = ftok("/bin/cat", 33);
 
   if (key_semaphore == -1)
   {

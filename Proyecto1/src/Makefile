@@ -5,6 +5,7 @@ CC=gcc
 ROUTE=../bin/
 FLAGS=-L../lib -I../include -lutilities
 FLAGS2=-I../include -lm
+FLAGS3=-I../include -lm
 
 BIN1=$(ROUTE)$(APP1)
 SRC1=$(APP1).c
@@ -19,7 +20,7 @@ COMPILE1:
 		$(CC) -o $(BIN1) $(SRC1) $(FLAGS)
 
 COMPILE2:
-		$(CC) -o $(BIN2) $(SRC2)
+		$(CC) -o $(BIN2) $(SRC2) $(FLAGS2)
 
 COMPILE3:
-	$(CC) -o $(BIN3) $(SRC3) $(FLAGS2)
+		$(CC) -o $(BIN3) $(SRC3) $(FLAGS3)
