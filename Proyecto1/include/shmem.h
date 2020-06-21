@@ -14,7 +14,5 @@ int get_buffer(int *id, key_t mem_key, int mem_size);
 int get_global(int *id, key_t mem_key);
 int get_buffer_memory(int *id, message **memory);
 int get_global_memory(int *id, global_variables **memory);
-int clean_memory(message **memory);
-int delete_memory(int shmid);
 
 #endif

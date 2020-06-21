@@ -71,18 +71,3 @@ int get_global_memory(int *id, global_variables **memory)
 
   return 1;
 }
-
-int clean_memory(message **memory)
-{
-  shmdt((char *)memory);
-}
-
-int delete_memory(int shmid)
-{
-  if (shmctl(shmid, IPC_RMID, 0) < 0)
-  {
-    return 0;
-  }
-  else
-    return 1;
-}

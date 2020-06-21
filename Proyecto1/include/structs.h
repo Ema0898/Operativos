@@ -14,6 +14,7 @@ typedef struct
   int producers;
   int consumers;
   int size;
+  int kill;
 } global_variables;
 
 #endif

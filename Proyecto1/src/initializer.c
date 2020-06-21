@@ -6,6 +6,7 @@
 #include <shmem.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <semaphore.h>
 
 void init_dirs(char *buffer_name);
 
@@ -78,36 +79,8 @@ int main(int argc, char *argv[])
   memory2->size = buffer_size;
 
   /* Create Semaphore */
-  key_t key_semaphore;
-  int id_semaphore;
-
-  key_semaphore = ftok("share_files/sem", 33);
-
-  if (key_semaphore == -1)
-  {
-    printf("Can't get semaphore key\n");
-    exit(0);
-  }
-
-  id_semaphore = semget(key_semaphore, buffer_size, 0600 | IPC_CREAT);
-
-  if (id_semaphore == -1)
-  {
-    printf("Can't create semaphore\n");
-    exit(0);
-  }
-
-  struct sembuf operation;
-
-  operation.sem_op = 1;
-  operation.sem_flg = 0;
-
-  for (int i = 0; i < buffer_size; ++i)
-  {
-    operation.sem_num = i;
-
-    semop(id_semaphore, &operation, 1);
-  }
+  create_semaphore("share_files/sem", buffer_size);
+  
 
   return 0;
 }

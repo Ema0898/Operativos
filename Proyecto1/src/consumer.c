@@ -13,7 +13,7 @@
 #include <utilities.h>
 
 double u_random();
-int possion();
+int possion(int lambda);
 void read_msg(int index, struct sembuf operation, int id, message *memory);
 
 int main(int argc, char *argv[])
@@ -22,17 +22,13 @@ int main(int argc, char *argv[])
   struct sembuf operation;
 
   char *buffer_name = argv[1];
-  float seconds = atof(argv[2]);
+  int lambda = atoi(argv[2]);
 
   if (argc != 3)
   {
-    printf("Cantidad de argumentos incorrecta\n");
+    printf("Usage: ./consumer <buffer_name> <time_medium>\n");
     exit(0);
-  }
-
-  int id_semaphore = init_semaphore("share_files/sem");
-
-  operation.sem_flg = 0;
+  }  
 
   //Memory
   key_t key_memory;
@@ -63,6 +59,7 @@ int main(int argc, char *argv[])
   }
 
   int buffer_size = memory2->size;
+  memory2->consumers++;
 
   char *key_route = concat("share_files/", buffer_name);
 
@@ -85,12 +82,17 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  /* Create semaphores */
+  int id_semaphore = init_semaphore("share_files/sem", buffer_size);
+
+  operation.sem_flg = 0;
+
   //Bloques de memoria
   int index;
 
   while (1)
   {
-    int p = possion();
+    int p = possion(lambda);
     sleep(p);
 
     //Leer en memoria
@@ -113,9 +115,9 @@ double u_random()
   return f / 100;
 }
 
-int possion() /* generates a random number with a Poisson distribution. Lamda is the average number */
+int possion(int lambda) /* generates a random number with a Poisson distribution. Lamda is the average number */
 {
-  int lambda = 1, k = 0;
+  int k = 0;
   double p = 1.0;
   double l = exp(-lambda); /* it is defined as long double for precision, and exp (-Lambda) is a decimal near 0 */
   while (p >= l)

@@ -25,13 +25,9 @@ int main(int argc, char *argv[])
 
   if (argc != 3)
   {
-    printf("Cantidad de argumentos incorrecta\n");
+    printf("Usage: ./producer <buffer_name> <time_medium>\n");
     exit(0);
-  }
-
-  int id_semaphore = init_semaphore("share_files/sem");
-
-  operation.sem_flg = 0;
+  }  
 
   //Setea cuando se hace random (Setea semilla)
   srand((unsigned)time(NULL));
@@ -65,6 +61,7 @@ int main(int argc, char *argv[])
   }
 
   int buffer_size = memory2->size;
+  memory2->producers++;
 
   char *key_route = concat("share_files/", buffer_name);
   key_memory = ftok(key_route, 33);
@@ -85,6 +82,11 @@ int main(int argc, char *argv[])
     printf("Can't get buffer memory\n");
     exit(0);
   }
+
+  /* Create semaphores */
+  int id_semaphore = init_semaphore("share_files/sem", buffer_size);
+
+  operation.sem_flg = 0;
 
   //Bloques de memoria
   int index;

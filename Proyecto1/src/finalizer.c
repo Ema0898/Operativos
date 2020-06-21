@@ -6,6 +6,8 @@
 #include <string.h>
 #include <utilities.h>
 #include <structs.h>
+#include <shmem.h>
+#include <semaphore.h>
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +32,6 @@ int main(int argc, char *argv[])
 
   key_t key;
   int id_memory;
-  message *memory = NULL;
 
   key = ftok(key_route, 33);
   if (key == -1)
@@ -39,17 +40,14 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  id_memory = shmget(key, sizeof(message) * buffer_size, 0777 | IPC_CREAT);
-
-  if (id_memory == -1)
+  if (get_buffer(&id_memory, key, buffer_size) == 0)
   {
-    printf("Shared Memory Id is Invalid\n");
+    printf("Shared Memory Key is Invalid\n");
     exit(0);
   }
 
   /* Shared Memory for Global Variables Initialization */
   int gv_shm_id;
-  global_variables *memory2 = NULL;
   key_t key_global;
 
   key_global = ftok("share_files/global", 33);
@@ -60,37 +58,18 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  gv_shm_id = shmget(key_global, sizeof(global_variables), 0777);
-  if (gv_shm_id == -1)
+  if (get_global(&gv_shm_id, key_global) == 0) 
   {
-    printf("Can't create shared memory for global variables\n");
+    printf("Can't get global memory to finish it\n");
     exit(0);
   }
 
-  /* Create Semaphore */
-  key_t key_semaphore;
-  int id_semaphore;
+  /* Create Semaphore */  
+  int id_semaphore = init_semaphore("share_files/sem", buffer_size);
+  
 
-  key_semaphore = ftok("share_files/sem", 33);
-
-  if (key_semaphore == -1)
-  {
-    printf("Can't get semaphore key\n");
-    exit(0);
-  }
-
-  id_semaphore = semget(key_semaphore, buffer_size, 0600 | IPC_CREAT);
-
-  if (id_semaphore == -1)
-  {
-    printf("Can't create semaphore\n");
-    exit(0);
-  }
-
-  shmdt((char *)memory);
   shmctl(id_memory, IPC_RMID, (struct shmid_ds *)NULL);
 
-  shmdt((char *)memory2);
   shmctl(gv_shm_id, IPC_RMID, (struct shmid_ds *)NULL);
 
   semctl(id_semaphore, 0, IPC_RMID, NULL);

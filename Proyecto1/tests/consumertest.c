@@ -16,6 +16,7 @@ typedef struct
   int producers;
   int consumers;
   int size;
+  int kill;
 } global_variables;
 
 int main()
@@ -24,7 +25,7 @@ int main()
   int id_memory;
   global_variables *memory = NULL;
 
-  key = ftok("/home/ema0898/Programas/Operativos/Proyecto1/gv", 33);
+  key = ftok("/mnt/c/Users/Bryan/Desktop/Operativos/Proyecto1/share_files/global", 33);
   if (key == -1)
   {
     printf("Shared Memory Key is Invalid\n");
@@ -45,7 +46,7 @@ int main()
     exit(0);
   }
 
-  printf("Read data 1 = %d\n", memory->size);
+  printf("Read data 1 = %d\n", memory->producers);
 
   if (id_memory != -1)
   {

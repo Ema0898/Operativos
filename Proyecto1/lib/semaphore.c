@@ -13,7 +13,7 @@ union semun {
 };
 #endif
 
-int init_semaphore(char* buff_name){
+int init_semaphore(char* buff_name, int buffer_size){
   // Semaforos
   key_t key;
   int id_semaphore;
@@ -27,7 +27,7 @@ int init_semaphore(char* buff_name){
     exit(0);
   }
 
-  id_semaphore = semget(key, 1024, 0600);
+  id_semaphore = semget(key, buffer_size, 0600);
 
   if (id_semaphore == -1)
   {
@@ -40,3 +40,37 @@ int init_semaphore(char* buff_name){
 
   return id_semaphore;
 } 
+
+void create_semaphore(char *route, int buffer_size)
+{
+  key_t key_semaphore;
+  int id_semaphore;
+
+  key_semaphore = ftok(route, 33);
+
+  if (key_semaphore == -1)
+  {
+    printf("Can't get semaphore key\n");
+    exit(0);
+  }
+
+  id_semaphore = semget(key_semaphore, buffer_size, 0600 | IPC_CREAT);
+
+  if (id_semaphore == -1)
+  {
+    printf("Can't create semaphore\n");
+    exit(0);
+  }
+
+  struct sembuf operation;
+
+  operation.sem_op = 1;
+  operation.sem_flg = 0;
+
+  for (int i = 0; i < buffer_size; ++i)
+  {
+    operation.sem_num = i;
+
+    semop(id_semaphore, &operation, 1);
+  }
+}

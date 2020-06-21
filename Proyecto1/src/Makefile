@@ -4,7 +4,7 @@ APP3=producer
 APP4=finalizer
 CC=gcc
 ROUTE=../bin/
-FLAGS=-L../lib -I../include -lutilities -lshmem
+FLAGS=-L../lib -I../include -lutilities -lshmem -lsemaphore
 FLAGS2=-L../lib -I../include -lm -lshmem -lsemaphore -lutilities
 
 BIN1=$(ROUTE)$(APP1)
