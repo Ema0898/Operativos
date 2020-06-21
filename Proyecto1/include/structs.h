@@ -13,6 +13,7 @@ typedef struct
 {
   int producers;
   int consumers;
+  int size;
 } global_variables;
 
 #endif

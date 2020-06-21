@@ -1,14 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/shm.h>
-#include <unistd.h>
 #include <sys/sem.h>
-#include <string.h>
 #include <utilities.h>
 #include <structs.h>
+#include <shmem.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+void init_dirs(char *buffer_name);
 
 int main(int argc, char *argv[])
 {
+  key_t key;
+  int id_memory;
+
+  key_t key_global;
+  int gv_shm_id;
+  global_variables *memory2 = NULL;
+
   /* Argument Validation */
   if (argc != 3)
   {
@@ -25,55 +34,54 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  checkDir(buffer_name);
+  /* Check and init directories */
+  init_dirs(buffer_name);
 
   /* Shared Memory Buffer Initialization */
+  char *key_route = concat("share_files/", buffer_name);
+  checkDir(key_route);
 
-  key_t key;
-  int id_memory;
-  message *memory = NULL;
-
-  key = ftok(buffer_name, 33);
+  key = ftok(key_route, 33);
   if (key == -1)
   {
-    printf("Shared Memory Key is Invalid\n");
+    printf("Buffer Key is Invalid\n");
     exit(0);
   }
 
-  id_memory = shmget(key, sizeof(message) * buffer_size, 0777 | IPC_CREAT);
-
-  if (id_memory == -1)
+  if (create_buffer(&id_memory, key, buffer_size) == 0)
   {
-    printf("Shared Memory Id is Invalid\n");
+    printf("Can't create buffer memory\n");
     exit(0);
   }
 
   /* Shared Memory for Global Variables Initialization */
-  int gv_shm_id;
-  global_variables *memory2 = NULL;
-  key_t key_global;
-
-  key_global = ftok("/bin/ls", 33);
+  key_global = ftok("share_files/global", 33);
 
   if (key_global == -1)
   {
-    printf("Shared Memory Key is Invalid\n");
+    printf("Global Variables Key is Invalid\n");
     exit(0);
   }
 
-  gv_shm_id = shmget(key_global, sizeof(global_variables), 0777 | IPC_CREAT);
-
-  if (gv_shm_id == -1)
+  if (create_global(&gv_shm_id, key_global) == 0)
   {
-    printf("Can't create shared memory for global variables\n");
+    printf("Can't create global memory\n");
     exit(0);
   }
+
+  if (get_global_memory(&gv_shm_id, &memory2) == 0)
+  {
+    printf("Can't get global memory\n");
+    exit(0);
+  }
+
+  memory2->size = buffer_size;
 
   /* Create Semaphore */
   key_t key_semaphore;
   int id_semaphore;
 
-  key_semaphore = ftok("/bin/cat", 33);
+  key_semaphore = ftok("share_files/sem", 33);
 
   if (key_semaphore == -1)
   {
@@ -100,17 +108,16 @@ int main(int argc, char *argv[])
 
     semop(id_semaphore, &operation, 1);
   }
-  
-
-  /* Not necesary, test only */
-
-  // shmdt((char *)memory);
-  // shmctl(id_memory, IPC_RMID, (struct shmid_ds *)NULL);
-
-  // shmdt((char *)memory2);
-  // shmctl(gv_shm_id, IPC_RMID, (struct shmid_ds *)NULL);
-
-  // semctl(id_semaphore, 0, IPC_RMID, NULL);
 
   return 0;
+}
+
+void init_dirs(char *buffer_name)
+{
+  if (checkDir("share_files") == 0)
+  {
+    create_dirs();
+    char *route = concat("share_files/", buffer_name);
+    create_dir(route);
+  }
 }

@@ -68,16 +68,38 @@ int split(char *str, char c, char ***arr)
 }
 
 /* check if the directory exits if not, it creates it */
-void checkDir(char *path)
+int checkDir(char *path)
 {
   struct stat st = {0};
   if (stat(path, &st) == -1)
   {
     mkdir(path, 0700);
     printf("Directory %s created\n", path);
+    return 0;
   }
   else
   {
     printf("Directory %s already exists\n", path);
+    return 1;
   }
+}
+
+void create_dirs(void)
+{
+  mkdir("share_files/sem", 0700);
+  mkdir("share_files/global", 0700);
+}
+
+void create_dir(char *dir)
+{
+  mkdir(dir, 0700);
+}
+
+char *concat(const char *s1, const char *s2)
+{
+  char *result = (char *)malloc(strlen(s1) + strlen(s2) + 1);
+
+  strcpy(result, s1);
+  strcat(result, s2);
+  return result;
 }
