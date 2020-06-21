@@ -1,14 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/sem.h>
 #include <utilities.h>
 #include <structs.h>
 #include <shmem.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <semaphore.h>
-
-void init_dirs(char *buffer_name);
 
 int main(int argc, char *argv[])
 {
@@ -29,18 +24,27 @@ int main(int argc, char *argv[])
   int buffer_size = atoi(argv[1]);
   char *buffer_name = argv[2];
 
-  if (buffer_size == 0)
+  if (buffer_size == 0 || !is_number(argv[1]))
   {
     printf("Please insert a correct buffer size\n");
     exit(0);
   }
 
   /* Check and init directories */
-  init_dirs(buffer_name);
+  create_dirs(buffer_name);
 
   /* Shared Memory Buffer Initialization */
-  char *key_route = concat("share_files/", buffer_name);
-  checkDir(key_route);
+  char *key_route;
+  if (check_bin_dir())
+  {
+    key_route = concat("../share_files/", buffer_name);
+  }
+  else
+  {
+    key_route = concat("share_files/", buffer_name);
+  }
+
+  check_dir(key_route);
 
   key = ftok(key_route, 33);
   if (key == -1)
@@ -56,7 +60,14 @@ int main(int argc, char *argv[])
   }
 
   /* Shared Memory for Global Variables Initialization */
-  key_global = ftok("share_files/global", 33);
+  if (check_bin_dir())
+  {
+    key_global = ftok("../share_files/global", 33);
+  }
+  else
+  {
+    key_global = ftok("share_files/global", 33);
+  }
 
   if (key_global == -1)
   {
@@ -79,18 +90,15 @@ int main(int argc, char *argv[])
   memory2->size = buffer_size;
 
   /* Create Semaphore */
-  create_semaphore("share_files/sem", buffer_size);
-  
+
+  if (check_bin_dir())
+  {
+    create_semaphore("../share_files/sem", buffer_size);
+  }
+  else
+  {
+    create_semaphore("share_files/sem", buffer_size);
+  }
 
   return 0;
-}
-
-void init_dirs(char *buffer_name)
-{
-  if (checkDir("share_files") == 0)
-  {
-    create_dirs();
-    char *route = concat("share_files/", buffer_name);
-    create_dir(route);
-  }
 }

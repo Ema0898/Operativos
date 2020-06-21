@@ -13,8 +13,9 @@ union semun {
 };
 #endif
 
-int init_semaphore(char* buff_name, int buffer_size){
-  // Semaforos
+/* Init and returns semaphore id */
+int init_semaphore(char *buff_name, int buffer_size)
+{
   key_t key;
   int id_semaphore;
   union semun arg;
@@ -39,8 +40,9 @@ int init_semaphore(char* buff_name, int buffer_size){
   semctl(id_semaphore, 0, SETVAL, &arg);
 
   return id_semaphore;
-} 
+}
 
+/* Create semaphores and initializes it in UP */
 void create_semaphore(char *route, int buffer_size)
 {
   key_t key_semaphore;

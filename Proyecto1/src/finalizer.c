@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/shm.h>
-#include <unistd.h>
 #include <sys/sem.h>
-#include <string.h>
 #include <utilities.h>
 #include <structs.h>
 #include <shmem.h>
 #include <semaphore.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[])
 {
@@ -21,14 +19,22 @@ int main(int argc, char *argv[])
   int buffer_size = atoi(argv[1]);
   char *buffer_name = argv[2];
 
-  if (buffer_size == 0)
+  if (buffer_size == 0 || !is_number(argv[1]))
   {
     printf("Please insert a correct buffer size\n");
     exit(0);
   }
 
   /* Shared Memory Buffer Initialization */
-  char *key_route = concat("share_files/", buffer_name);
+  char *key_route;
+  if (check_bin_dir())
+  {
+    key_route = concat("../share_files/", buffer_name);
+  }
+  else
+  {
+    key_route = concat("share_files/", buffer_name);
+  }
 
   key_t key;
   int id_memory;
@@ -50,7 +56,14 @@ int main(int argc, char *argv[])
   int gv_shm_id;
   key_t key_global;
 
-  key_global = ftok("share_files/global", 33);
+  if (check_bin_dir())
+  {
+    key_global = ftok("../share_files/global", 33);
+  }
+  else
+  {
+    key_global = ftok("share_files/global", 33);
+  }
 
   if (key_global == -1)
   {
@@ -58,21 +71,41 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  if (get_global(&gv_shm_id, key_global) == 0) 
+  if (get_global(&gv_shm_id, key_global) == 0)
   {
     printf("Can't get global memory to finish it\n");
     exit(0);
   }
 
-  /* Create Semaphore */  
-  int id_semaphore = init_semaphore("share_files/sem", buffer_size);
-  
+  /* Get Semaphore */
+  int id_semaphore;
+  if (check_bin_dir())
+  {
+    id_semaphore = init_semaphore("../share_files/sem", buffer_size);
+  }
+  else
+  {
+    id_semaphore = init_semaphore("share_files/sem", buffer_size);
+  }
+
+  /* Clears semaphores and shared memory for buffer and global variables */
 
   shmctl(id_memory, IPC_RMID, (struct shmid_ds *)NULL);
 
   shmctl(gv_shm_id, IPC_RMID, (struct shmid_ds *)NULL);
 
   semctl(id_semaphore, 0, IPC_RMID, NULL);
+
+  /* Deletes files for shared memory and semaphore */
+
+  if (check_bin_dir())
+  {
+    system("rm -rf ../share_files");
+  }
+  else
+  {
+    system("rm -rf share_files");
+  }
 
   return 0;
 }

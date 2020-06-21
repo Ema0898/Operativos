@@ -1,12 +1,14 @@
 #ifndef _UTILITIES_H
 #define _UTILITIES_H
 
-// Contiene funciones para leer y escribir los archivos que usa el servidor
+/* Library to used various general functions */
 
 int split(char *str, char c, char ***arr);
-int checkDir(char *path);
-void create_dirs(void);
+int check_dir(char *path);
+void create_dirs(char *buffer_name);
 char *concat(const char *s1, const char *s2);
-void create_dir(char *dir);
+int check_bin_dir(void);
+int is_number(char *text);
+int is_float(char *s);
 
 #endif

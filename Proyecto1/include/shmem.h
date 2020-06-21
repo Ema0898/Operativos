@@ -8,6 +8,8 @@
 #include <sys/shm.h>
 #include <structs.h>
 
+/* Library to create and manage shared memory */
+
 int create_buffer(int *id, key_t mem_key, int mem_size);
 int create_global(int *id, key_t mem_key);
 int get_buffer(int *id, key_t mem_key, int mem_size);

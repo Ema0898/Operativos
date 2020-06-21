@@ -2,10 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-#include <time.h>
 #include <sys/sem.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
 #include <string.h>
 #include <structs.h>
 #include <shmem.h>
@@ -17,7 +14,7 @@ void write_msg(int data1, int data2, char *data3, int index, struct sembuf opera
 
 int main(int argc, char *argv[])
 {
-  // Semaforos
+  /* Argument validation */
   struct sembuf operation;
 
   char *buffer_name = argv[1];
@@ -27,12 +24,17 @@ int main(int argc, char *argv[])
   {
     printf("Usage: ./producer <buffer_name> <time_medium>\n");
     exit(0);
-  }  
+  }
 
-  //Setea cuando se hace random (Setea semilla)
+  if (seconds == 0 || !is_float(argv[2]))
+  {
+    printf("Please insert a correct time medium size\n");
+    exit(0);
+  }
+
   srand((unsigned)time(NULL));
 
-  // Memoria compartida
+  /* Shared memory for global variables initializartion */
   key_t key_memory;
   int id_memory;
   message *memory = NULL;
@@ -41,7 +43,15 @@ int main(int argc, char *argv[])
   int gv_shm_id;
   global_variables *memory2 = NULL;
 
-  key_global = ftok("share_files/global", 33);
+  if (check_bin_dir())
+  {
+    key_global = ftok("../share_files/global", 33);
+  }
+  else
+  {
+    key_global = ftok("share_files/global", 33);
+  }
+
   if (key_global == -1)
   {
     printf("Global Memory Key is Invalid\n");
@@ -60,10 +70,21 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  /* Gets buffer size and increments producers counter */
   int buffer_size = memory2->size;
   memory2->producers++;
 
-  char *key_route = concat("share_files/", buffer_name);
+  /* Shared memory for buffer initializartion */
+  char *key_route;
+  if (check_bin_dir())
+  {
+    key_route = concat("../share_files/", buffer_name);
+  }
+  else
+  {
+    key_route = concat("share_files/", buffer_name);
+  }
+
   key_memory = ftok(key_route, 33);
   if (key_memory == -1)
   {
@@ -84,11 +105,18 @@ int main(int argc, char *argv[])
   }
 
   /* Create semaphores */
-  int id_semaphore = init_semaphore("share_files/sem", buffer_size);
+  int id_semaphore;
+  if (check_bin_dir())
+  {
+    id_semaphore = init_semaphore("../share_files/sem", buffer_size);
+  }
+  else
+  {
+    id_semaphore = init_semaphore("share_files/sem", buffer_size);
+  }
 
   operation.sem_flg = 0;
 
-  //Bloques de memoria
   int index;
 
   while (1)
@@ -97,14 +125,16 @@ int main(int argc, char *argv[])
     printf("%f \n", s);
     sleep(s);
 
-    //Escribir en memoria
     index = rand() % 1023;
     operation.sem_num = 0;
     operation.sem_op = -1;
     write_msg(1, 1, "Hola", 0, operation, id_semaphore, memory);
   }
+
+  return 0;
 }
 
+/* Exponential Distribution */
 double ran_expo(double lambda)
 {
   double u;
@@ -112,17 +142,18 @@ double ran_expo(double lambda)
   return -log(1 - u) / lambda;
 }
 
+/* Write on shared memory */
 void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory)
 {
-  // Down
+  /* Down */
   semop(id, &operation, 1);
 
-  // Memory write
+  /* Memory Write */
   memory[index].pid = data1;
   memory[index].magic_number = data2;
   strcpy(memory[index].date, data3);
 
-  // Up
+  /* Up */
   operation.sem_op = 1;
   semop(id, &operation, 1);
 }

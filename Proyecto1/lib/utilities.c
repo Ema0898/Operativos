@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 /* split function */
 int split(char *str, char c, char ***arr)
@@ -68,7 +69,7 @@ int split(char *str, char c, char ***arr)
 }
 
 /* check if the directory exits if not, it creates it */
-int checkDir(char *path)
+int check_dir(char *path)
 {
   struct stat st = {0};
   if (stat(path, &st) == -1)
@@ -84,17 +85,7 @@ int checkDir(char *path)
   }
 }
 
-void create_dirs(void)
-{
-  mkdir("share_files/sem", 0700);
-  mkdir("share_files/global", 0700);
-}
-
-void create_dir(char *dir)
-{
-  mkdir(dir, 0700);
-}
-
+/* concats two strings */
 char *concat(const char *s1, const char *s2)
 {
   char *result = (char *)malloc(strlen(s1) + strlen(s2) + 1);
@@ -102,4 +93,85 @@ char *concat(const char *s1, const char *s2)
   strcpy(result, s1);
   strcat(result, s2);
   return result;
+}
+
+/* check if program is executed from bin directory */
+int check_bin_dir(void)
+{
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) == NULL)
+  {
+    printf("Can't get current directory\n");
+    exit(0);
+  }
+
+  char **array;
+  int size = split(cwd, '/', &array);
+
+  if (!strcmp(array[size - 1], "bin"))
+  {
+    return 1;
+  }
+
+  return 0;
+}
+
+/* creates files for shared memory and semaphores */
+void create_dirs(char *buffer_name)
+{
+  if (check_bin_dir())
+  {
+    char *route = concat("../share_files/", buffer_name);
+
+    if (check_dir(route) == 0)
+    {
+      mkdir("../share_files", 0700);
+      mkdir("../share_files/global", 0700);
+      mkdir("../share_files/sem", 0700);
+
+      mkdir(route, 0700);
+    }
+  }
+  else
+  {
+    char *route = concat("share_files/", buffer_name);
+
+    if (check_dir(route) == 0)
+    {
+      mkdir("share_files", 0700);
+      mkdir("share_files/global", 0700);
+      mkdir("share_files/sem", 0700);
+
+      mkdir(route, 0700);
+    }
+  }
+}
+
+/* check if a string is a number */
+int is_number(char *text)
+{
+  int j;
+  j = strlen(text);
+  while (j--)
+  {
+    if (text[j] > 47 && text[j] < 58)
+      continue;
+
+    return 0;
+  }
+  return 1;
+}
+
+/* check if a string is a float */
+int is_float(char *s)
+{
+  const char *ptr = s;
+  double x = strtod(ptr, &s);
+
+    if (*s == 0)
+  {
+    return 1;
+  }
+
+  return 0;
 }
