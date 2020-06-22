@@ -14,9 +14,8 @@ void write_msg(int data1, int data2, char *data3, int index, struct sembuf opera
 
 int main(int argc, char *argv[])
 {
-  /* Argument validation */
-  struct sembuf operation;
-
+  /* Argument validation */  
+  
   char *buffer_name = argv[1];
   float seconds = atof(argv[2]);
 
@@ -72,6 +71,8 @@ int main(int argc, char *argv[])
 
   /* Gets buffer size and increments producers counter */
   int buffer_size = memory2->size;
+
+  /* Poner semaforo a variables globales */
   memory2->producers++;
 
   /* Shared memory for buffer initializartion */
@@ -115,20 +116,35 @@ int main(int argc, char *argv[])
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
 
+  struct sembuf operation;
   operation.sem_flg = 0;
-
-  int index;
 
   while (1)
   {
     float s = ran_expo(seconds);
     printf("%f \n", s);
-    sleep(s);
+    sleep(s);    
 
-    index = rand() % 1023;
-    operation.sem_num = 0;
+    /* Down for producer semaphore */
+    operation.sem_num = buffer_size + 1;
     operation.sem_op = -1;
-    write_msg(1, 1, "Hola", 0, operation, id_semaphore, memory);
+    semop(id_semaphore, &operation, 1);
+    printf("Pasó down de semaforo productor\n");
+
+    /* Get next index to write */
+    int index = get_index(0, buffer_size, memory);
+    printf("Write memory index %d\n", index);
+
+    /* Write Operation */
+    operation.sem_num = index;
+    operation.sem_op = -1;
+
+    write_msg(1, rand()%6, "Hola", index, operation, id_semaphore, memory);
+
+    /* Up for consumer semaphore */
+    operation.sem_num = buffer_size + 2;
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
   }
 
   return 0;
@@ -151,6 +167,7 @@ void write_msg(int data1, int data2, char *data3, int index, struct sembuf opera
   /* Memory Write */
   memory[index].pid = data1;
   memory[index].magic_number = data2;
+  memory[index].is_used = 1;
   strcpy(memory[index].date, data3);
 
   /* Up */

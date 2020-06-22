@@ -4,15 +4,18 @@
 #include <structs.h>
 #include <shmem.h>
 #include <semaphore.h>
+#include <sys/sem.h>
 
 int main(int argc, char *argv[])
 {
   key_t key;
   int id_memory;
+  message *memory = NULL;
 
   key_t key_global;
   int gv_shm_id;
   global_variables *memory2 = NULL;
+
 
   /* Argument Validation */
   if (argc != 3)
@@ -59,6 +62,12 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  if (get_buffer_memory(&id_memory, &memory) == 0)
+  {
+    printf("Can't get buffer memory\n");
+    exit(0);
+  }
+
   /* Shared Memory for Global Variables Initialization */
   if (check_bin_dir())
   {
@@ -90,7 +99,6 @@ int main(int argc, char *argv[])
   memory2->size = buffer_size;
 
   /* Create Semaphore */
-
   if (check_bin_dir())
   {
     create_semaphore("../share_files/sem", buffer_size);
@@ -99,6 +107,9 @@ int main(int argc, char *argv[])
   {
     create_semaphore("share_files/sem", buffer_size);
   }
+
+  /* Set buffer to zero */
+  init_memory(buffer_size, memory);
 
   return 0;
 }

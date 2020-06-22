@@ -11,15 +11,15 @@
 
 double u_random();
 int poisson(int lambda);
-void read_msg(int index, struct sembuf operation, int id, message *memory);
+void read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic);
 
 int main(int argc, char *argv[])
 {
   /* Argument validation */
-  struct sembuf operation;
-
   char *buffer_name = argv[1];
   int lambda = atoi(argv[2]);
+  int pid_magic = getpid() % 6;
+  printf("Mi numero magico es: %d\n", pid_magic);
 
   if (argc != 3)
   {
@@ -71,9 +71,11 @@ int main(int argc, char *argv[])
 
   /* Gets buffer size and increments producers counter */
   int buffer_size = memory2->size;
+
+  /* Poner semaforo a variables globales */
   memory2->consumers++;
 
-  /* Shared memory for buffer initializartion */
+  /* Shared memory for buffer initialization */
   char *key_route;
   if (check_bin_dir())
   {
@@ -91,7 +93,7 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  if (get_buffer(&id_memory, key_memory, 1024) == 0)
+  if (get_buffer(&id_memory, key_memory, buffer_size) == 0)
   {
     printf("Can't get buffer memory\n");
     exit(0);
@@ -114,20 +116,34 @@ int main(int argc, char *argv[])
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
 
-  operation.sem_flg = 0;
-
-  int index;
+  struct sembuf operation;
 
   while (1)
   {
     int p = poisson(lambda);
     sleep(p);
 
-    index = rand() % 1023;
+    /* Down for consumer semaphore */
+    operation.sem_num = buffer_size + 2;
+    operation.sem_op = -1;
+    semop(id_semaphore, &operation, 1);
+    printf("Pasó down de semaforo consumidor\n");
+
+    /* Get next index to read */
+    int index = get_index(1, buffer_size, memory);
+    printf("Read memory index %d\n", index);
+
+    /* Read Operation */
+
     operation.sem_num = 0;
     operation.sem_op = -1;
 
-    read_msg(0, operation, id_semaphore, memory);
+    read_msg(index, operation, id_semaphore, memory, pid_magic);
+
+    /* Up for producer semaphore */
+    operation.sem_num = buffer_size + 1;
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
   }
 
   return 0;
@@ -158,7 +174,7 @@ int poisson(int lambda)
 }
 
 /* Read from shared memory */
-void read_msg(int index, struct sembuf operation, int id, message *memory)
+void read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic)
 {
   /* Down */
   semop(id, &operation, 1);
@@ -167,8 +183,14 @@ void read_msg(int index, struct sembuf operation, int id, message *memory)
   printf("PID = %d\n", memory[index].pid);
   printf("Magic Number = %d\n", memory[index].magic_number);
   printf("Date = %s \n", memory[index].date);
+  printf("Is Used %d\n", memory[index].is_used);
+  memory[index].is_used = 0;
 
   /* Up */
   operation.sem_op = 1;
   semop(id, &operation, 1);
+
+  if(pid_magic == memory[index].magic_number) {
+    exit(0);
+  }
 }

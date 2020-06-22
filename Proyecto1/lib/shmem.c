@@ -77,3 +77,29 @@ int get_global_memory(int *id, global_variables **memory)
 
   return 1;
 }
+
+/*Return is used*/
+int get_index(int flag, int size, message *memory)
+{
+  for(int i = 0; i < size; i++)
+  {
+    if(memory[i].is_used == flag)
+    {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+/*Set is_used*/
+void init_memory(int size, message *memory)
+{
+  for(int i = 0; i < size; i++)
+  {
+    memory[i].is_used = 0;
+    memory[i].pid = 0;
+    memory[i].magic_number = 0;
+    memset(memory[i].date, 0, 50 * sizeof(char));
+  }
+}

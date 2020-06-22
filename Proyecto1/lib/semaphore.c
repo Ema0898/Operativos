@@ -1,6 +1,8 @@
 #include <sys/sem.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
 
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 // The union is already defined in sys/sem.h
@@ -28,7 +30,7 @@ int init_semaphore(char *buff_name, int buffer_size)
     exit(0);
   }
 
-  id_semaphore = semget(key, buffer_size, 0600);
+  id_semaphore = semget(key, buffer_size + 3, 0600);
 
   if (id_semaphore == -1)
   {
@@ -56,7 +58,7 @@ void create_semaphore(char *route, int buffer_size)
     exit(0);
   }
 
-  id_semaphore = semget(key_semaphore, buffer_size, 0600 | IPC_CREAT);
+  id_semaphore = semget(key_semaphore, buffer_size + 3, 0600 | IPC_CREAT);
 
   if (id_semaphore == -1)
   {
@@ -69,10 +71,38 @@ void create_semaphore(char *route, int buffer_size)
   operation.sem_op = 1;
   operation.sem_flg = 0;
 
-  for (int i = 0; i < buffer_size; ++i)
+  printf("SEMAPHORE BUFFER SIZE = %d\n", buffer_size);
+
+  for (int i = 0; i <= buffer_size; ++i)
   {
     operation.sem_num = i;
 
     semop(id_semaphore, &operation, 1);
   }
+
+  /***********************************/
+  operation.sem_op = buffer_size;
+  operation.sem_num++;
+  semop(id_semaphore, &operation, 1);
 }
+
+/* Function to Up semaphore */
+void up_semaphore(int id, int index)
+{
+  struct sembuf operation;
+  operation.sem_op = 1;  
+  operation.sem_num = index;
+  operation.sem_flg = 0;
+  semop(id, &operation, 1);
+}
+
+/* Function to Down semaphore */
+void down_semaphore(int id, int index) 
+{  
+  struct sembuf operation;
+  operation.sem_op = -1;
+  operation.sem_num = index;
+  operation.sem_flg = 0;
+  semop(id, &operation, 1);   
+}
+

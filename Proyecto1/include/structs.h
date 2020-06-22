@@ -7,8 +7,8 @@ typedef struct
 {
   int pid;
   int magic_number;
-  char date[50];
-  char hour[50];
+  int is_used;
+  char date[50];  
 } message;
 
 typedef struct
