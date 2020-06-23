@@ -220,7 +220,7 @@ int main()
 
   /* Consumer finalization */
   printc("#####################################\n", 2);
-  printc("      End Process\n", 6);
+  printc("         End Process\n", 6);
   printc("PID:", 2);
   printc("\t\t\t2\n", 3);
   printc("Type:", 2);
@@ -237,7 +237,7 @@ int main()
 
   /* Producer finalization */
   printc("#####################################\n", 2);
-  printc("      End Process\n", 6);
+  printc("           End Process\n", 6);
   printc("PID:", 2);
   printc("\t\t\t2\n", 3);
   printc("Produced Messages:", 2);
@@ -270,4 +270,6 @@ int main()
   printc("#############################################\n", 2);
 
   return 0;
+
+
 }

@@ -17,6 +17,9 @@ typedef struct
   int consumers;
   int size;
   int kill;
+  double waiting_time;
+  double blocked_time;
+  double user_time;
 } global_variables;
 
 #endif

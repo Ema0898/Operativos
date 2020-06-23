@@ -8,10 +8,19 @@
 #include <shmem.h>
 #include <semaphore.h>
 #include <utilities.h>
+#include <sys/time.h>
+
+double waiting_time;
+double blocked_time;
+double user_time;
+struct timeval tic, toc, tic2, toc2, tic3, toc3;
+double result;
+int counter;
+int memory_index = 0;
 
 double u_random();
 int poisson(int lambda);
-void read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic);
+int read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic);
 
 int main(int argc, char *argv[])
 {
@@ -21,9 +30,9 @@ int main(int argc, char *argv[])
   int pid_magic = getpid() % 6;
   printf("Mi numero magico es: %d\n", pid_magic);
 
-  if (argc != 3)
+  if (argc != 4)
   {
-    printf("Usage: ./consumer <buffer_name> <time_medium>\n");
+    printf("Usage: ./consumer <buffer_name> <time_medium> <operation_mode>\n");
     exit(0);
   }
 
@@ -120,30 +129,97 @@ int main(int argc, char *argv[])
 
   while (1)
   {
+    if (!strcmp(argv[3], "manual"))
+    {
+      printf("Press enter to consume message\n");
+      
+      gettimeofday(&tic3, NULL);
+      
+      getchar();
+
+      gettimeofday(&toc3, NULL);
+      result = (toc3.tv_sec - tic3.tv_sec);
+      user_time += result;
+
+      printf("user time: %f\n", user_time);
+    }
+
     int p = poisson(lambda);
-    sleep(p);
+    waiting_time += p;
+    printf("WAITING TIME = %d\n", p);
+    sleep(p);    
 
     /* Down for consumer semaphore */
     operation.sem_num = buffer_size + 2;
     operation.sem_op = -1;
+    
+    gettimeofday(&tic, NULL);
+
     semop(id_semaphore, &operation, 1);
+
+    gettimeofday(&toc, NULL);
+    result = (toc.tv_sec - tic.tv_sec);
+
+    blocked_time += result;
+
     printf("Pasó down de semaforo consumidor\n");
 
     /* Get next index to read */
-    int index = get_index(1, buffer_size, memory);
-    printf("Read memory index %d\n", index);
+    //int index = get_index(1, buffer_size, memory);
+    //printf("Read memory index %d\n", index);
+
+    /* Get next index to read */
+    int index = get_index(1, buffer_size, memory, memory_index, id_semaphore);
+    memory_index = index + 1;
 
     /* Read Operation */
 
-    operation.sem_num = 0;
+    operation.sem_num = index;
     operation.sem_op = -1;
 
-    read_msg(index, operation, id_semaphore, memory, pid_magic);
+    printf("Read memory index %d\n", index);
+
+    int msg_flag = 0;
+
+    gettimeofday(&tic2, NULL);
+
+    semop(id_semaphore, &operation, 1);
+
+    gettimeofday(&toc2, NULL);
+    result = (toc2.tv_sec - tic2.tv_sec);
+
+    blocked_time += result;
+    printf("bloked time: %f\n", blocked_time);
+
+    msg_flag = read_msg(index, operation, id_semaphore, memory, pid_magic);
+    
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
+    counter++;
+
+    printf("END READ1\n");
 
     /* Up for producer semaphore */
     operation.sem_num = buffer_size + 1;
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
+    printf("END READ2\n");
+
+    operation.sem_num = buffer_size;
+    operation.sem_op = -1;
+    semop(id_semaphore, &operation, 1);
+
+    memory2->waiting_time += waiting_time;
+    memory2->user_time += user_time;
+    memory2->blocked_time += blocked_time;
+
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
+
+    if (msg_flag)
+    {
+      exit(0);
+    }
   }
 
   return 0;
@@ -174,10 +250,11 @@ int poisson(int lambda)
 }
 
 /* Read from shared memory */
-void read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic)
+int  read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic)
 {
   /* Down */
-  semop(id, &operation, 1);
+
+  // semop(id, &operation, 1);
 
   /* Memory Read */
   printf("PID = %d\n", memory[index].pid);
@@ -187,10 +264,12 @@ void read_msg(int index, struct sembuf operation, int id, message *memory, int p
   memory[index].is_used = 0;
 
   /* Up */
-  operation.sem_op = 1;
-  semop(id, &operation, 1);
+  // operation.sem_op = 1;
+  // semop(id, &operation, 1);
 
   if(pid_magic == memory[index].magic_number) {
-    exit(0);
+    return 1;
   }
+
+  return 0;
 }

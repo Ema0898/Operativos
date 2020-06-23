@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
   /* Shared Memory for Global Variables Initialization */
   int gv_shm_id;
   key_t key_global;
+  global_variables *memory2;  
 
   if (check_bin_dir())
   {
@@ -77,6 +78,12 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  if (get_global_memory(&gv_shm_id, &memory2) == 0)
+  {
+    printf("Can't get buffer memory\n");
+    exit(0);
+  }
+
   /* Get Semaphore */
   int id_semaphore;
   if (check_bin_dir())
@@ -87,6 +94,10 @@ int main(int argc, char *argv[])
   {
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
+
+  printf("Waiting Time: %f\n", memory2->waiting_time);
+  printf("User Time: %f\n", memory2->user_time);
+  printf("Blocked Time: %f\n", memory2->blocked_time);
 
   /* Clears semaphores and shared memory for buffer and global variables */
 

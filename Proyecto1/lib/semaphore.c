@@ -84,6 +84,7 @@ void create_semaphore(char *route, int buffer_size)
   operation.sem_op = buffer_size;
   operation.sem_num++;
   semop(id_semaphore, &operation, 1);
+
 }
 
 /* Function to Up semaphore */

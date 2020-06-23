@@ -78,18 +78,26 @@ int get_global_memory(int *id, global_variables **memory)
   return 1;
 }
 
-/*Return is used*/
-int get_index(int flag, int size, message *memory)
+/* Return is used */
+int get_index(int flag, int size, message *memory, int ref, int id_semaphore)
 {
-  for(int i = 0; i < size; i++)
+  struct sembuf operation;
+  while(1) 
   {
-    if(memory[i].is_used == flag)
+    operation.sem_num = ref % size;
+    operation.sem_op = -1;
+    semop(id_semaphore, &operation, 1);
+    printf("Is used es esto prrrrrrrros %d\n", memory[ref % size].is_used);
+    if(memory[ref % size].is_used == flag) 
     {
-      return i;
+      operation.sem_op = 1;
+      semop(id_semaphore, &operation, 1);
+      return ref % size;
     }
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
+    ref++;
   }
-
-  return -1;
 }
 
 /*Set is_used*/

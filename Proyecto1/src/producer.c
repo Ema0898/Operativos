@@ -8,6 +8,14 @@
 #include <shmem.h>
 #include <semaphore.h>
 #include <utilities.h>
+#include <sys/time.h>
+
+double waiting_time;
+double blocked_time;
+struct timeval tic, toc, tic2, toc2;
+double result;
+int counter;
+int memory_index = 0;
 
 double ran_expo(double lambda);
 void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory);
@@ -118,31 +126,79 @@ int main(int argc, char *argv[])
 
   struct sembuf operation;
   operation.sem_flg = 0;
+  int current_pid = getpid();
 
   while (1)
   {
     float s = ran_expo(seconds);
+    waiting_time += s;
     printf("%f \n", s);
     sleep(s);    
 
     /* Down for producer semaphore */
     operation.sem_num = buffer_size + 1;
     operation.sem_op = -1;
+    
+    gettimeofday(&tic, NULL);
+  
     semop(id_semaphore, &operation, 1);
+
+    gettimeofday(&toc, NULL);
+    result = (toc.tv_sec - tic.tv_sec);
+
+    blocked_time += result;
+
     printf("Pasó down de semaforo productor\n");
 
     /* Get next index to write */
-    int index = get_index(0, buffer_size, memory);
-    printf("Write memory index %d\n", index);
+    //int index = get_index(0, buffer_size, memory);
+    //printf("Write memory index %d\n", index);
+
+    int index = get_index(0, buffer_size, memory, memory_index, id_semaphore);
+    memory_index = index + 1;
 
     /* Write Operation */
     operation.sem_num = index;
     operation.sem_op = -1;
 
-    write_msg(1, rand()%6, "Hola", index, operation, id_semaphore, memory);
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char date[64];
+    strftime(date, sizeof(date), "%c", tm);
+
+    gettimeofday(&tic2, NULL);
+
+    printf("Index: %d\n", index);
+    semop(id_semaphore, &operation, 1);
+
+    gettimeofday(&toc2, NULL);
+    result = (toc2.tv_sec - tic2.tv_sec);
+
+    blocked_time += result;
+
+    printf("bloked time: %f\n", blocked_time);
+  
+    write_msg(current_pid, rand() % 6, date, index, operation, id_semaphore, memory);
+
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
+
+    counter++;
 
     /* Up for consumer semaphore */
+    printf("Productor UP 1\n");
     operation.sem_num = buffer_size + 2;
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
+    printf("Productor UP 2\n");
+
+    operation.sem_num = buffer_size;
+    operation.sem_op = -1;
+    semop(id_semaphore, &operation, 1);
+
+    memory2->waiting_time += waiting_time;
+    memory2->blocked_time += blocked_time;
+
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
   }
@@ -162,7 +218,8 @@ double ran_expo(double lambda)
 void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory)
 {
   /* Down */
-  semop(id, &operation, 1);
+  
+  // semop(id, &operation, 1);
 
   /* Memory Write */
   memory[index].pid = data1;
@@ -171,6 +228,6 @@ void write_msg(int data1, int data2, char *data3, int index, struct sembuf opera
   strcpy(memory[index].date, data3);
 
   /* Up */
-  operation.sem_op = 1;
-  semop(id, &operation, 1);
+  //operation.sem_op = 1;
+  //semop(id, &operation, 1);
 }
