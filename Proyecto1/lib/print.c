@@ -209,14 +209,3 @@ void print_finalizer_end(int messages, int buffer, int consumers, int producers,
   printc(user_print, 3);
   printc("######################################################\n", 2);
 }
-
-int main()
-{
-  print_producer_message(20, 30, 40);
-  print_consumer_message(50, 25, 12, "Sat May 23 10:41:47 2020", 112, 5);
-  print_consumer_end(112, 1, 45, 42.00, 34.00, 23.00);
-  print_producer_end(113, 34, 23.00, 12.34);
-  print_finalizer_end(10, 10, 10, 10, 10, 100.00, 1000.00, 1500.00);
-
-  return 0;
-}
