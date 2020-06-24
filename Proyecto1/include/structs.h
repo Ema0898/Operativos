@@ -15,8 +15,12 @@ typedef struct
 {
   int producers;
   int consumers;
+  int total_producers;
+  int total_consumers;
   int size;
   int kill;
+  int magic;
+  int messages;
   double waiting_time;
   double blocked_time;
   double user_time;

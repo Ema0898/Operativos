@@ -9,6 +9,7 @@
 #include <semaphore.h>
 #include <utilities.h>
 #include <sys/time.h>
+#include <print.h>
 
 double waiting_time;
 double blocked_time;
@@ -18,7 +19,7 @@ int counter;
 int memory_index = 0;
 
 double ran_expo(double lambda);
-void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory);
+void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory, global_variables *memory2, int buffer_size);
 
 int main(int argc, char *argv[])
 {
@@ -80,8 +81,7 @@ int main(int argc, char *argv[])
   /* Gets buffer size and increments producers counter */
   int buffer_size = memory2->size;
 
-  /* Poner semaforo a variables globales */
-  memory2->producers++;
+  
 
   /* Shared memory for buffer initializartion */
   char *key_route;
@@ -128,11 +128,22 @@ int main(int argc, char *argv[])
   operation.sem_flg = 0;
   int current_pid = getpid();
 
+  /* Poner semaforo a variables globales */
+  operation.sem_num = buffer_size;
+  operation.sem_op = -1;
+  semop(id_semaphore, &operation, 1);
+
+  memory2->producers++;
+  memory2->total_producers++;
+
+  operation.sem_op = 1;
+  semop(id_semaphore, &operation, 1);
+
   while (1)
   {
     float s = ran_expo(seconds);
     waiting_time += s;
-    printf("%f \n", s);
+    printf("Tiempo de espera %f \n", s);
     sleep(s);    
 
     /* Down for producer semaphore */
@@ -148,12 +159,25 @@ int main(int argc, char *argv[])
 
     blocked_time += result;
 
-    printf("Pasó down de semaforo productor\n");
+    operation.sem_num = buffer_size;
+    operation.sem_op = -1;
+    semop(id_semaphore, &operation, 1);
+
+    if (memory2->kill)
+    {
+      memory2->producers--;
+      operation.sem_op = 1;
+      semop(id_semaphore, &operation, 1);
+
+      print_producer_end(current_pid, counter,  waiting_time, blocked_time);
+
+      exit(0);
+    }
+
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
 
     /* Get next index to write */
-    //int index = get_index(0, buffer_size, memory);
-    //printf("Write memory index %d\n", index);
-
     int index = get_index(0, buffer_size, memory, memory_index, id_semaphore);
     memory_index = index + 1;
 
@@ -168,17 +192,14 @@ int main(int argc, char *argv[])
 
     gettimeofday(&tic2, NULL);
 
-    printf("Index: %d\n", index);
     semop(id_semaphore, &operation, 1);
 
     gettimeofday(&toc2, NULL);
     result = (toc2.tv_sec - tic2.tv_sec);
 
     blocked_time += result;
-
-    printf("bloked time: %f\n", blocked_time);
   
-    write_msg(current_pid, rand() % 6, date, index, operation, id_semaphore, memory);
+    write_msg(current_pid, rand() % 6, date, index, operation, id_semaphore, memory, memory2, buffer_size);
 
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
@@ -186,11 +207,9 @@ int main(int argc, char *argv[])
     counter++;
 
     /* Up for consumer semaphore */
-    printf("Productor UP 1\n");
     operation.sem_num = buffer_size + 2;
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
-    printf("Productor UP 2\n");
 
     operation.sem_num = buffer_size;
     operation.sem_op = -1;
@@ -215,7 +234,7 @@ double ran_expo(double lambda)
 }
 
 /* Write on shared memory */
-void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory)
+void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory, global_variables *memory2, int buffer_size)
 {
   /* Down */
   
@@ -226,6 +245,19 @@ void write_msg(int data1, int data2, char *data3, int index, struct sembuf opera
   memory[index].magic_number = data2;
   memory[index].is_used = 1;
   strcpy(memory[index].date, data3);
+
+  operation.sem_num = buffer_size;
+  operation.sem_op = -1;
+  semop(id, &operation, 1);
+
+  int consumers = memory2->consumers;
+  int producers = memory2->producers;  
+  memory2->messages++; 
+  
+  operation.sem_op = 1;
+  semop(id, &operation, 1);
+
+  print_producer_message(index, consumers, producers);
 
   /* Up */
   //operation.sem_op = 1;

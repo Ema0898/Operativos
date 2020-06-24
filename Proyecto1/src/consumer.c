@@ -9,6 +9,7 @@
 #include <semaphore.h>
 #include <utilities.h>
 #include <sys/time.h>
+#include <print.h>
 
 double waiting_time;
 double blocked_time;
@@ -20,7 +21,7 @@ int memory_index = 0;
 
 double u_random();
 int poisson(int lambda);
-int read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic);
+int read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic, global_variables *memory2, int buffer_size);
 
 int main(int argc, char *argv[])
 {
@@ -32,13 +33,19 @@ int main(int argc, char *argv[])
 
   if (argc != 4)
   {
-    printf("Usage: ./consumer <buffer_name> <time_medium> <operation_mode>\n");
+    printf("Usage: ./consumer <buffer_name> <time_medium> <operation_mode (manual/automatic)>\n");
     exit(0);
   }
 
   if (lambda == 0 || !is_number(argv[2]))
   {
     printf("Please insert a correct time medium size\n");
+    exit(0);
+  }
+
+  if (strcmp(argv[3], "manual") != 0 && strcmp(argv[3], "automatic") != 0)
+  {
+    printf("Please insert a correct operation mode\n");
     exit(0);
   }
 
@@ -79,10 +86,7 @@ int main(int argc, char *argv[])
   }
 
   /* Gets buffer size and increments producers counter */
-  int buffer_size = memory2->size;
-
-  /* Poner semaforo a variables globales */
-  memory2->consumers++;
+  int buffer_size = memory2->size; 
 
   /* Shared memory for buffer initialization */
   char *key_route;
@@ -125,13 +129,26 @@ int main(int argc, char *argv[])
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
 
+  /* Poner semaforo a variables globales */
   struct sembuf operation;
+
+  operation.sem_num = buffer_size;
+  operation.sem_op = -1;
+  semop(id_semaphore, &operation, 1);
+
+  memory2->consumers++;
+  memory2->total_consumers++;
+
+  operation.sem_op = 1;
+  semop(id_semaphore, &operation, 1);
+
+  int current_pid = getpid();
 
   while (1)
   {
     if (!strcmp(argv[3], "manual"))
     {
-      printf("Press enter to consume message\n");
+      printc("Press enter to consume message\n", 2);
       
       gettimeofday(&tic3, NULL);
       
@@ -145,6 +162,12 @@ int main(int argc, char *argv[])
     }
 
     int p = poisson(lambda);
+
+    if (p == 0)
+    {
+      p = 3;
+    }
+
     waiting_time += p;
     printf("WAITING TIME = %d\n", p);
     sleep(p);    
@@ -162,11 +185,24 @@ int main(int argc, char *argv[])
 
     blocked_time += result;
 
-    printf("Pasó down de semaforo consumidor\n");
+    //
+    operation.sem_num = buffer_size;
+    operation.sem_op = -1;
+    semop(id_semaphore, &operation, 1);
 
-    /* Get next index to read */
-    //int index = get_index(1, buffer_size, memory);
-    //printf("Read memory index %d\n", index);
+    if (memory2->kill)
+    {
+      memory2->consumers--;
+      operation.sem_op = 1;
+      semop(id_semaphore, &operation, 1);
+
+      print_consumer_end(current_pid, 1, counter, waiting_time, blocked_time, user_time);
+
+      exit(0);
+    }
+
+    operation.sem_op = 1;
+    semop(id_semaphore, &operation, 1);
 
     /* Get next index to read */
     int index = get_index(1, buffer_size, memory, memory_index, id_semaphore);
@@ -176,8 +212,6 @@ int main(int argc, char *argv[])
 
     operation.sem_num = index;
     operation.sem_op = -1;
-
-    printf("Read memory index %d\n", index);
 
     int msg_flag = 0;
 
@@ -189,21 +223,17 @@ int main(int argc, char *argv[])
     result = (toc2.tv_sec - tic2.tv_sec);
 
     blocked_time += result;
-    printf("bloked time: %f\n", blocked_time);
 
-    msg_flag = read_msg(index, operation, id_semaphore, memory, pid_magic);
+    msg_flag = read_msg(index, operation, id_semaphore, memory, pid_magic, memory2, buffer_size);
     
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
     counter++;
 
-    printf("END READ1\n");
-
     /* Up for producer semaphore */
     operation.sem_num = buffer_size + 1;
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
-    printf("END READ2\n");
 
     operation.sem_num = buffer_size;
     operation.sem_op = -1;
@@ -218,6 +248,18 @@ int main(int argc, char *argv[])
 
     if (msg_flag)
     {
+      operation.sem_num = buffer_size;
+      operation.sem_op = -1;
+      semop(id_semaphore, &operation, 1);
+
+      memory2->consumers--; 
+      memory2->magic++;       
+
+      operation.sem_op = 1;
+      semop(id_semaphore, &operation, 1);
+
+      print_consumer_end(getpid(), 0, counter, waiting_time, blocked_time, user_time);
+
       exit(0);
     }
   }
@@ -250,18 +292,26 @@ int poisson(int lambda)
 }
 
 /* Read from shared memory */
-int  read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic)
+int  read_msg(int index, struct sembuf operation, int id, message *memory, int pid_magic, global_variables *memory2, int buffer_size)
 {
   /* Down */
 
   // semop(id, &operation, 1);
 
   /* Memory Read */
-  printf("PID = %d\n", memory[index].pid);
-  printf("Magic Number = %d\n", memory[index].magic_number);
-  printf("Date = %s \n", memory[index].date);
-  printf("Is Used %d\n", memory[index].is_used);
   memory[index].is_used = 0;
+
+  operation.sem_num = buffer_size;
+  operation.sem_op = -1;
+  semop(id, &operation, 1);
+
+  int consumers = memory2->consumers;
+  int producers = memory2->producers;   
+  
+  operation.sem_op = 1;
+  semop(id, &operation, 1);
+
+  print_consumer_message(index, consumers, producers,  memory[index].date, memory[index].pid, memory[index].magic_number);
 
   /* Up */
   // operation.sem_op = 1;

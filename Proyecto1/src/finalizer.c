@@ -6,6 +6,7 @@
 #include <shmem.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include <print.h>
 
 int main(int argc, char *argv[])
 {
@@ -38,6 +39,7 @@ int main(int argc, char *argv[])
 
   key_t key;
   int id_memory;
+  message *memory;
 
   key = ftok(key_route, 33);
   if (key == -1)
@@ -49,6 +51,18 @@ int main(int argc, char *argv[])
   if (get_buffer(&id_memory, key, buffer_size) == 0)
   {
     printf("Shared Memory Key is Invalid\n");
+    exit(0);
+  }
+
+  if (get_buffer(&id_memory, key, buffer_size) == 0)
+  {
+    printf("Shared Memory Key is Invalid\n");
+    exit(0);
+  }
+
+  if (get_buffer_memory(&id_memory, &memory) == 0)
+  {
+    printf("Can't get buffer memory\n");
     exit(0);
   }
 
@@ -80,7 +94,7 @@ int main(int argc, char *argv[])
 
   if (get_global_memory(&gv_shm_id, &memory2) == 0)
   {
-    printf("Can't get buffer memory\n");
+    printf("Can't get global memory\n");
     exit(0);
   }
 
@@ -95,9 +109,41 @@ int main(int argc, char *argv[])
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
 
-  printf("Waiting Time: %f\n", memory2->waiting_time);
-  printf("User Time: %f\n", memory2->user_time);
-  printf("Blocked Time: %f\n", memory2->blocked_time);
+  // printf("Waiting Time: %f\n", memory2->waiting_time);
+  // printf("User Time: %f\n", memory2->user_time);
+  // printf("Blocked Time: %f\n", memory2->blocked_time);
+
+  
+  struct sembuf operation;
+  operation.sem_flg = 0;
+
+  operation.sem_num = buffer_size;
+  operation.sem_op = -1;
+  semop(id_semaphore, &operation, 1);
+
+  memory2->kill = 1;
+
+  operation.sem_op = 1;
+  semop(id_semaphore, &operation, 1);
+
+  operation.sem_num = buffer_size + 1;
+  operation.sem_op = buffer_size;
+  semop(id_semaphore, &operation, 1);
+
+  operation.sem_num = buffer_size + 2;
+  operation.sem_op = buffer_size;
+  semop(id_semaphore, &operation, 1);
+
+  printf("Empiezo de matar todo\n");
+
+  while ((memory2->producers > 0) || (memory2->consumers > 0))
+  {
+    sleep(0.5);
+  }
+
+  printf("Terminé de matar todo\n");
+  int unread_msg = get_unread_messages(buffer_size, memory);
+  print_finalizer_end(memory2->messages, unread_msg, memory2->total_consumers, memory2->total_producers, memory2->magic, memory2->waiting_time, memory2->blocked_time, memory2->user_time);
 
   /* Clears semaphores and shared memory for buffer and global variables */
 

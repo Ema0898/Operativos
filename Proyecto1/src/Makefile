@@ -5,7 +5,7 @@ APP4=finalizer
 CC=gcc
 ROUTE=../bin/
 FLAGS=-L../lib -I../include -lutilities -lshmem -lsemaphore
-FLAGS2=-L../lib -I../include -lm -lshmem -lsemaphore -lutilities
+FLAGS2=-L../lib -I../include -lm -lshmem -lsemaphore -lutilities -lprint
 
 BIN1=$(ROUTE)$(APP1)
 SRC1=$(APP1).c

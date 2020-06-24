@@ -87,7 +87,6 @@ int get_index(int flag, int size, message *memory, int ref, int id_semaphore)
     operation.sem_num = ref % size;
     operation.sem_op = -1;
     semop(id_semaphore, &operation, 1);
-    printf("Is used es esto prrrrrrrros %d\n", memory[ref % size].is_used);
     if(memory[ref % size].is_used == flag) 
     {
       operation.sem_op = 1;
@@ -110,4 +109,18 @@ void init_memory(int size, message *memory)
     memory[i].magic_number = 0;
     memset(memory[i].date, 0, 50 * sizeof(char));
   }
+}
+
+int get_unread_messages(int size, message *memory)
+{
+  int counter = 0;
+  for (int i = 0; i < size; ++i)
+  {
+    if (memory[i].is_used)
+    {
+      counter++;
+    }
+  }
+
+  return counter;
 }
