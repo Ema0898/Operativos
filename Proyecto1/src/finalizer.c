@@ -11,60 +11,13 @@
 int main(int argc, char *argv[])
 {
   /* Argument Validation */
-  if (argc != 3)
+  if (argc != 2)
   {
-    printf("Usage: ./finalizer <buffer_size> <buffer_name>\n");
+    printf("Usage: ./finalizer <buffer_size>\n");
     exit(0);
   }
 
-  int buffer_size = atoi(argv[1]);
-  char *buffer_name = argv[2];
-
-  if (buffer_size == 0 || !is_number(argv[1]))
-  {
-    printf("Please insert a correct buffer size\n");
-    exit(0);
-  }
-
-  /* Shared Memory Buffer Initialization */
-  char *key_route;
-  if (check_bin_dir())
-  {
-    key_route = concat("../share_files/", buffer_name);
-  }
-  else
-  {
-    key_route = concat("share_files/", buffer_name);
-  }
-
-  key_t key;
-  int id_memory;
-  message *memory;
-
-  key = ftok(key_route, 33);
-  if (key == -1)
-  {
-    printf("Shared Memory Key is Invalid\n");
-    exit(0);
-  }
-
-  if (get_buffer(&id_memory, key, buffer_size) == 0)
-  {
-    printf("Shared Memory Key is Invalid\n");
-    exit(0);
-  }
-
-  if (get_buffer(&id_memory, key, buffer_size) == 0)
-  {
-    printf("Shared Memory Key is Invalid\n");
-    exit(0);
-  }
-
-  if (get_buffer_memory(&id_memory, &memory) == 0)
-  {
-    printf("Can't get buffer memory\n");
-    exit(0);
-  }
+  char *buffer_name = argv[1];
 
   /* Shared Memory for Global Variables Initialization */
   int gv_shm_id;
@@ -98,6 +51,48 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  int buffer_size = memory2->size;
+
+  /* Shared Memory Buffer Initialization */  
+  char *key_route;
+  if (check_bin_dir())
+  {
+    key_route = concat("../share_files/", buffer_name);
+  }
+  else
+  {
+    key_route = concat("share_files/", buffer_name);
+  }
+  
+  key_t key;
+  int id_memory;
+  message *memory;
+
+  key = ftok(key_route, 33);
+  if (key == -1)
+  {
+    printf("Shared Memory Key is Invalid\n");
+    exit(0);
+  }
+
+  if (get_buffer(&id_memory, key, buffer_size) == 0)
+  {
+    printf("Shared Memory Key is Invalid\n");
+    exit(0);
+  }
+
+  if (get_buffer(&id_memory, key, buffer_size) == 0)
+  {
+    printf("Shared Memory Key is Invalid\n");
+    exit(0);
+  }
+
+  if (get_buffer_memory(&id_memory, &memory) == 0)
+  {
+    printf("Can't get buffer memory\n");
+    exit(0);
+  }
+
   /* Get Semaphore */
   int id_semaphore;
   if (check_bin_dir())
@@ -108,11 +103,6 @@ int main(int argc, char *argv[])
   {
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
-
-  // printf("Waiting Time: %f\n", memory2->waiting_time);
-  // printf("User Time: %f\n", memory2->user_time);
-  // printf("Blocked Time: %f\n", memory2->blocked_time);
-
   
   struct sembuf operation;
   operation.sem_flg = 0;
@@ -134,14 +124,15 @@ int main(int argc, char *argv[])
   operation.sem_op = buffer_size;
   semop(id_semaphore, &operation, 1);
 
-  printf("Empiezo de matar todo\n");
+  printc("Stopping all process....\n", 2);
 
   while ((memory2->producers > 0) || (memory2->consumers > 0))
   {
     sleep(0.5);
   }
 
-  printf("Terminé de matar todo\n");
+  printc("All process stopped\n", 2);
+
   int unread_msg = get_unread_messages(buffer_size, memory);
   print_finalizer_end(memory2->messages, unread_msg, memory2->total_consumers, memory2->total_producers, memory2->magic, memory2->waiting_time, memory2->blocked_time, memory2->user_time);
 
