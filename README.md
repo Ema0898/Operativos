@@ -30,7 +30,7 @@ Si se desa utilizar Windows se puede utilizar la herramienta HDD Raw Copy
   * Se agrega la versión funcional del proyecto.
   
 ## Proyecto 1
-En este proyecto se implementó un sistema productor-consumidor utilizando memoria compartida y semáforos. Para la realización de este proyecto, se utilizó como base los códigos encontrados en la siguiente página web http://www.chuidiang.org/clinux/ipcs/mem_comp.php.
+En este proyecto se implementó un sistema productor-consumidor utilizando memoria compartida y semáforos. Para la realización de este proyecto, se utilizó como base los códigos encontrados en la siguiente página web http://www.chuidiang.org/clinux/ipcs/mem_comp.php. En este proyecto se utilizan distribuciones exponenciales formales. El código para la distribución exponencial fue tomado del siguiente link https://stackoverflow.com/questions/34558230/generating-random-numbers-of-exponential-distribution y el código de la distribución de Poisson fue tomado del siguiente link https://topic.alibabacloud.com/a/use-c-language-to-generate-poisson-distribution-random-number-instance-source-code_1_31_20012031.html
 
 ### Instalación
 Para ejecutar el código es necesario instalar los siguientes programas
