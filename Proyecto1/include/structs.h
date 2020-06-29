@@ -24,6 +24,7 @@ typedef struct
   double waiting_time;
   double blocked_time;
   double user_time;
+  double kernel_time;
 } global_variables;
 
 #endif

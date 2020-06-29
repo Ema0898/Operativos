@@ -49,6 +49,7 @@ void printc(char *msg, int color)
   }
 }
 
+/* Print message when producer writes a message */ 
 void print_producer_message(int index, int consumers, int producers)
 {
   char index_print[12];
@@ -70,6 +71,7 @@ void print_producer_message(int index, int consumers, int producers)
   printc("###########################\n", 2);
 }
 
+/* Print message when consumer reads a message */
 void print_consumer_message(int index, int consumers, int producers, char *date, int pid, int magic_number)
 {
   char index_print[12];
@@ -103,6 +105,7 @@ void print_consumer_message(int index, int consumers, int producers, char *date,
   printc("#################################################\n", 2);
 }
 
+/* Print message when consumer finish */
 void print_consumer_end(int pid, int type, int messages, double waiting, double blocked, double user)
 {
   char pid_print[12];
@@ -144,17 +147,20 @@ void print_consumer_end(int pid, int type, int messages, double waiting, double 
   printc("#####################################\n", 2);
 }
 
-void print_producer_end(int pid, int messages, double waiting, double blocked)
+/* Print message when producer finish */
+void print_producer_end(int pid, int messages, double waiting, double blocked, double kernel)
 {
   char pid_print[12];
   char messages_print[8];
   char waiting_print[20];
   char blocked_print[20];
+  char kernel_print[20];
 
   sprintf(pid_print, "\t\t\t%d\n", pid);
   sprintf(messages_print, "\t%d\n", messages);
   sprintf(waiting_print, "\t\t%fs\n", waiting);
   sprintf(blocked_print, "\t\t%fs\n", blocked);
+  sprintf(kernel_print, "\t\t%fs\n", kernel);
 
   printc("#####################################\n", 2);
   printc("           End Process\n", 6);
@@ -166,10 +172,13 @@ void print_producer_end(int pid, int messages, double waiting, double blocked)
   printc(waiting_print, 3);
   printc("Blocked Time:", 2);
   printc(blocked_print, 3);
+  printc("Kernel Time:", 2);
+  printc(kernel_print, 3);
   printc("#####################################\n", 2);
 }
 
-void print_finalizer_end(int messages, int buffer, int consumers, int producers, int magic, double waiting, double blocked, double user)
+/* Print message when finalizer is executed */
+void print_finalizer_end(int messages, int buffer, int consumers, int producers, int magic, double waiting, double blocked, double user, double kernel)
 {
   char messages_print[14];
   char buffer_print[12];
@@ -179,6 +188,7 @@ void print_finalizer_end(int messages, int buffer, int consumers, int producers,
   char waiting_print[20];
   char blocked_print[20];
   char user_print[20];
+  char kernel_print[20];
 
   sprintf(messages_print, "\t\t\t\t%d\n", messages);
   sprintf(buffer_print, "\t\t\t%d\n", buffer);
@@ -188,6 +198,7 @@ void print_finalizer_end(int messages, int buffer, int consumers, int producers,
   sprintf(waiting_print, "\t\t\t%fs\n", waiting);
   sprintf(blocked_print, "\t\t\t%fs\n", blocked);
   sprintf(user_print, "\t\t\t%fs\n", user);
+  sprintf(kernel_print, "\t\t\t%fs\n", kernel);
 
   printc("######################################################\n", 2);
   printc("                 End System\n", 6);
@@ -207,5 +218,7 @@ void print_finalizer_end(int messages, int buffer, int consumers, int producers,
   printc(blocked_print, 3);
   printc("Total User Time:", 2);
   printc(user_print, 3);
+  printc("Total Kernel Time:", 2);
+  printc(kernel_print, 3);
   printc("######################################################\n", 2);
 }

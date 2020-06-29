@@ -13,8 +13,8 @@
 
 double waiting_time;
 double blocked_time;
-struct timeval tic, toc, tic2, toc2;
-double result;
+struct timeval tic, toc, tic2, toc2, tic_kernel, toc_kernel;
+double result, result_kernel;
 int counter;
 int memory_index = 0;
 
@@ -23,7 +23,7 @@ void write_msg(int data1, int data2, char *data3, int index, struct sembuf opera
 
 int main(int argc, char *argv[])
 {
-  /* Argument validation */  
+  /* Argument validation */ 
   
   char *buffer_name = argv[1];
   float seconds = atof(argv[2]);
@@ -81,8 +81,6 @@ int main(int argc, char *argv[])
   /* Gets buffer size and increments producers counter */
   int buffer_size = memory2->size;
 
-  
-
   /* Shared memory for buffer initializartion */
   char *key_route;
   if (check_bin_dir())
@@ -128,7 +126,7 @@ int main(int argc, char *argv[])
   operation.sem_flg = 0;
   int current_pid = getpid();
 
-  /* Poner semaforo a variables globales */
+  /* Increments producers counter */
   operation.sem_num = buffer_size;
   operation.sem_op = -1;
   semop(id_semaphore, &operation, 1);
@@ -141,35 +139,48 @@ int main(int argc, char *argv[])
 
   while (1)
   {
+    /* Exponential Distribution waiting  */
     float s = ran_expo(seconds);
     waiting_time += s;
-    printf("Tiempo de espera %f \n", s);
+
+    char waiting_print[30];
+    sprintf(waiting_print, "Waiting time %f\n", s);
+    printc(waiting_print, 1);
+
     sleep(s);    
 
     /* Down for producer semaphore */
     operation.sem_num = buffer_size + 1;
     operation.sem_op = -1;
     
+    /* Get blocked time producers semaphore */
     gettimeofday(&tic, NULL);
   
     semop(id_semaphore, &operation, 1);
 
     gettimeofday(&toc, NULL);
-    result = (toc.tv_sec - tic.tv_sec);
+    result = (double)(toc.tv_usec - tic.tv_usec) / 1000000 + (double)(toc.tv_sec - tic.tv_sec);
 
     blocked_time += result;
 
+    /* Writes to global memory */
     operation.sem_num = buffer_size;
     operation.sem_op = -1;
     semop(id_semaphore, &operation, 1);
 
+    /* Check for finish flag */
     if (memory2->kill)
     {
+
+      /* Writes stadistics on global varibles */
       memory2->producers--;
+      memory2->waiting_time += waiting_time;
+      memory2->blocked_time += blocked_time;
+      memory2->kernel_time += (waiting_time + blocked_time);
       operation.sem_op = 1;
       semop(id_semaphore, &operation, 1);
 
-      print_producer_end(current_pid, counter,  waiting_time, blocked_time);
+      print_producer_end(current_pid, counter,  waiting_time, blocked_time, (waiting_time + blocked_time));
 
       exit(0);
     }
@@ -181,7 +192,7 @@ int main(int argc, char *argv[])
     int index = get_index(0, buffer_size, memory, memory_index, id_semaphore);
     memory_index = index + 1;
 
-    /* Write Operation */
+    /* Write Operation, Down to semaphore */
     operation.sem_num = index;
     operation.sem_op = -1;
 
@@ -195,12 +206,14 @@ int main(int argc, char *argv[])
     semop(id_semaphore, &operation, 1);
 
     gettimeofday(&toc2, NULL);
-    result = (toc2.tv_sec - tic2.tv_sec);
+    result = (double)(toc2.tv_usec - tic2.tv_usec) / 1000000 + (double)(toc2.tv_sec - tic2.tv_sec);
 
     blocked_time += result;
   
+    /* Write on shared memory */
     write_msg(current_pid, rand() % 6, date, index, operation, id_semaphore, memory, memory2, buffer_size);
 
+    /* Up to semaphore */
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
 
@@ -208,16 +221,6 @@ int main(int argc, char *argv[])
 
     /* Up for consumer semaphore */
     operation.sem_num = buffer_size + 2;
-    operation.sem_op = 1;
-    semop(id_semaphore, &operation, 1);
-
-    operation.sem_num = buffer_size;
-    operation.sem_op = -1;
-    semop(id_semaphore, &operation, 1);
-
-    memory2->waiting_time += waiting_time;
-    memory2->blocked_time += blocked_time;
-
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
   }
@@ -236,9 +239,6 @@ double ran_expo(double lambda)
 /* Write on shared memory */
 void write_msg(int data1, int data2, char *data3, int index, struct sembuf operation, int id, message *memory, global_variables *memory2, int buffer_size)
 {
-  /* Down */
-  
-  // semop(id, &operation, 1);
 
   /* Memory Write */
   memory[index].pid = data1;
@@ -258,8 +258,4 @@ void write_msg(int data1, int data2, char *data3, int index, struct sembuf opera
   semop(id, &operation, 1);
 
   print_producer_message(index, consumers, producers);
-
-  /* Up */
-  //operation.sem_op = 1;
-  //semop(id, &operation, 1);
 }
