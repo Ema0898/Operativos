@@ -1,0 +1,36 @@
+.PHONY: clean all
+
+APP_GUI=libgui
+LIB_GUI=gui
+OBJ_GUI=$(LIB_GUI).o
+SRC_GUI=$(LIB_GUI).c
+GUI=$(APP_GUI).a
+INCLUDE_GUI=../include/gui.h
+
+APP_UTILITIES=libutilities
+LIB_UTILITIES=utilities
+OBJ_UTILITIES=$(LIB_UTILITIES).o
+SRC_UTILITIES=$(LIB_UTILITIES).c
+UTILITIES=$(APP_UTILITIES).a
+INCLUDE_UTILITIES=../include/utilities.h
+
+CC=gcc
+MAKELIB=ar rv
+RANLIB=ranlib
+
+all: $(GUI) $(UTILITIES) clean
+
+$(GUI): $(OBJ_GUI)
+		$(MAKELIB) $(GUI) $(OBJ_GUI) && $(RANLIB) $(GUI)
+
+$(OBJ_GUI): $(SRC_GUI) $(INCLUDE_GUI)
+		$(CC) -c $(SRC_GUI)
+
+$(UTILITIES): $(OBJ_UTILITIES)
+		$(MAKELIB) $(UTILITIES) $(OBJ_UTILITIES) && $(RANLIB) $(UTILITIES)
+
+$(OBJ_UTILITIES): $(SRC_UTILITIES) $(INCLUDE_UTILITIES)
+		$(CC) -c $(SRC_UTILITIES)
+
+clean:
+		rm  *.o
