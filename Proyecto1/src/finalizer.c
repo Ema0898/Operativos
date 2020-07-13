@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
   /* Argument Validation */
   if (argc != 2)
   {
-    printf("Usage: ./finalizer <buffer_size>\n");
+    printf("Usage: ./finalizer <buffer_name>\n");
     exit(0);
   }
 
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
   int buffer_size = memory2->size;
 
-  /* Shared Memory Buffer Initialization */  
+  /* Check running directory */    
   char *key_route;
   if (check_bin_dir())
   {
@@ -63,7 +63,8 @@ int main(int argc, char *argv[])
   {
     key_route = concat("share_files/", buffer_name);
   }
-  
+
+  /* Shared Memory Buffer Initialization */  
   key_t key;
   int id_memory;
   message *memory;
@@ -103,6 +104,8 @@ int main(int argc, char *argv[])
   {
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
+
+  /* Up to all the semaphores */
   
   struct sembuf operation;
   operation.sem_flg = 0;
@@ -133,8 +136,12 @@ int main(int argc, char *argv[])
 
   printc("All process stopped\n", 2);
 
+  /* Retreive the global memory variables */
   int unread_msg = get_unread_messages(buffer_size, memory);
-  print_finalizer_end(memory2->messages, unread_msg, memory2->total_consumers, memory2->total_producers, memory2->magic, memory2->waiting_time, memory2->blocked_time, memory2->user_time);
+
+  double kernel = memory2->blocked_time + memory2->waiting_time;
+
+  print_finalizer_end(memory2->messages, unread_msg, memory2->total_consumers, memory2->total_producers, memory2->magic, memory2->waiting_time, memory2->blocked_time, memory2->user_time, kernel);
 
   /* Clears semaphores and shared memory for buffer and global variables */
 

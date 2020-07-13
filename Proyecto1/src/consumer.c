@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     id_semaphore = init_semaphore("share_files/sem", buffer_size);
   }
 
-  /* Poner semaforo a variables globales */
+  /* Increments consumers counter */
   struct sembuf operation;
 
   operation.sem_num = buffer_size;
@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
 
   while (1)
   {
+    /* Check for manual mode flag */
     if (!strcmp(argv[3], "manual"))
     {
       printc("Press enter to consume message\n", 2);
@@ -154,44 +155,51 @@ int main(int argc, char *argv[])
       
       getchar();
 
+      /* Get user time */
       gettimeofday(&toc3, NULL);
-      result = (toc3.tv_sec - tic3.tv_sec);
+      result = (double)(toc3.tv_usec - tic3.tv_usec) / 1000000 + (double)(toc3.tv_sec - tic3.tv_sec);
       user_time += result;
-
-      printf("user time: %f\n", user_time);
     }
 
     int p = poisson(lambda);
 
-    if (p == 0)
+    if (p <= 0 || p >= 10)
     {
-      p = 3;
+      p = 5;
     }
 
     waiting_time += p;
-    printf("WAITING TIME = %d\n", p);
+    char waiting_print[20];
+    sprintf(waiting_print, "Waiting time %d\n", p);
+    printc(waiting_print, 1);
     sleep(p);    
 
     /* Down for consumer semaphore */
     operation.sem_num = buffer_size + 2;
     operation.sem_op = -1;
     
+    /* Get blocked time consumer semaphore */
     gettimeofday(&tic, NULL);
 
     semop(id_semaphore, &operation, 1);
 
     gettimeofday(&toc, NULL);
-    result = (toc.tv_sec - tic.tv_sec);
+    result = (double)(toc.tv_usec - tic.tv_usec) / 1000000 + (double)(toc.tv_sec - tic.tv_sec);
 
     blocked_time += result;
 
-    //
+    /* Writes to global memory */
     operation.sem_num = buffer_size;
     operation.sem_op = -1;
     semop(id_semaphore, &operation, 1);
 
+    /* Check for finish flag */
     if (memory2->kill)
     {
+      /* Writes stadistics on global varibles */
+      memory2->waiting_time += waiting_time;
+      memory2->user_time += user_time;
+      memory2->blocked_time += blocked_time;
       memory2->consumers--;
       operation.sem_op = 1;
       semop(id_semaphore, &operation, 1);
@@ -208,8 +216,7 @@ int main(int argc, char *argv[])
     int index = get_index(1, buffer_size, memory, memory_index, id_semaphore);
     memory_index = index + 1;
 
-    /* Read Operation */
-
+    /* Read Operation, Down to semaphore */
     operation.sem_num = index;
     operation.sem_op = -1;
 
@@ -220,10 +227,11 @@ int main(int argc, char *argv[])
     semop(id_semaphore, &operation, 1);
 
     gettimeofday(&toc2, NULL);
-    result = (toc2.tv_sec - tic2.tv_sec);
+    result = (double)(toc2.tv_usec - tic2.tv_usec) / 1000000 + (double)(toc2.tv_sec - tic2.tv_sec);
 
     blocked_time += result;
 
+    /* Read from shared memory */
     msg_flag = read_msg(index, operation, id_semaphore, memory, pid_magic, memory2, buffer_size);
     
     operation.sem_op = 1;
@@ -235,25 +243,19 @@ int main(int argc, char *argv[])
     operation.sem_op = 1;
     semop(id_semaphore, &operation, 1);
 
-    operation.sem_num = buffer_size;
-    operation.sem_op = -1;
-    semop(id_semaphore, &operation, 1);
-
-    memory2->waiting_time += waiting_time;
-    memory2->user_time += user_time;
-    memory2->blocked_time += blocked_time;
-
-    operation.sem_op = 1;
-    semop(id_semaphore, &operation, 1);
-
+    /* Check for magic number flag */
     if (msg_flag)
     {
+      /* Writes stadistics on global varibles */
       operation.sem_num = buffer_size;
       operation.sem_op = -1;
       semop(id_semaphore, &operation, 1);
 
       memory2->consumers--; 
-      memory2->magic++;       
+      memory2->magic++;
+      memory2->waiting_time += waiting_time;
+      memory2->user_time += user_time;
+      memory2->blocked_time += blocked_time;       
 
       operation.sem_op = 1;
       semop(id_semaphore, &operation, 1);
