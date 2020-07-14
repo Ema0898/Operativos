@@ -1,10 +1,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
+#include <string.h>
 
-void load_map(int map[24][46])
+int load_map(int map[24][46])
 {
-  FILE *file = fopen("assets/map/map1.map", "r");
+  FILE *file = fopen("../assets/map/map1.map", "r");
+
+  if (file == NULL)
+  {
+    return 0;
+  }
 
   char ch;
   int i = 0;
@@ -38,4 +45,110 @@ void load_map(int map[24][46])
     }
   }
   fclose(file);
+
+  return 1;
+}
+
+/* split function */
+int split(char *str, char c, char ***arr)
+{
+  int count = 1;
+  int token_len = 1;
+  int i = 0;
+  char *p;
+  char *t;
+
+  p = str;
+  while (*p != '\0')
+  {
+    if (*p == c)
+      count++;
+    p++;
+  }
+
+  *arr = (char **)malloc(sizeof(char *) * count);
+  if (*arr == NULL)
+    exit(1);
+
+  p = str;
+  while (*p != '\0')
+  {
+    if (*p == c)
+    {
+      (*arr)[i] = (char *)malloc(sizeof(char) * token_len);
+      if ((*arr)[i] == NULL)
+        exit(1);
+
+      token_len = 0;
+      i++;
+    }
+    p++;
+    token_len++;
+  }
+  (*arr)[i] = (char *)malloc(sizeof(char) * token_len);
+  if ((*arr)[i] == NULL)
+    exit(1);
+
+  i = 0;
+  p = str;
+  t = ((*arr)[i]);
+  while (*p != '\0')
+  {
+    if (*p != c && *p != '\0')
+    {
+      *t = *p;
+      t++;
+    }
+    else
+    {
+      *t = '\0';
+      i++;
+      t = ((*arr)[i]);
+    }
+    p++;
+  }
+
+  return count;
+}
+
+/* concats two strings */
+char *concat(const char *s1, const char *s2)
+{
+  char *result = (char *)malloc(strlen(s1) + strlen(s2) + 1);
+
+  strcpy(result, s1);
+  strcat(result, s2);
+  return result;
+}
+
+/* check if program is executed from bin directory */
+int check_bin_dir(void)
+{
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) == NULL)
+  {
+    printf("Can't get current directory\n");
+    exit(0);
+  }
+
+  char **array;
+  char *cont = concat(cwd, "/");
+  int size = split(cont, '/', &array);
+
+  int result = 0;
+
+  if (!strcmp(array[size - 2], "bin"))
+  {
+    result = 1;
+  }
+
+  for (int i = 0; i < size; ++i)
+  {
+    free(array[i]);
+  }
+
+  free(array);
+  free(cont);
+
+  return result;
 }

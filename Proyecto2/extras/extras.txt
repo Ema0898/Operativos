@@ -1,0 +1,4 @@
+- SDL
+- SDL Image
+- SDL TTF
+- libconfig

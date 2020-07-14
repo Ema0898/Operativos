@@ -14,11 +14,18 @@ SRC_UTILITIES=$(LIB_UTILITIES).c
 UTILITIES=$(APP_UTILITIES).a
 INCLUDE_UTILITIES=../include/utilities.h
 
+APP_CFG=libcfg
+LIB_CFG=cfg
+OBJ_CFG=$(LIB_CFG).o
+SRC_CFG=$(LIB_CFG).c
+CFG=$(APP_CFG).a
+INCLUDE_CFG=../include/cfg.h
+
 CC=gcc
 MAKELIB=ar rv
 RANLIB=ranlib
 
-all: $(GUI) $(UTILITIES) clean
+all: $(GUI) $(UTILITIES) $(CFG) clean
 
 $(GUI): $(OBJ_GUI)
 		$(MAKELIB) $(GUI) $(OBJ_GUI) && $(RANLIB) $(GUI)
@@ -31,6 +38,12 @@ $(UTILITIES): $(OBJ_UTILITIES)
 
 $(OBJ_UTILITIES): $(SRC_UTILITIES) $(INCLUDE_UTILITIES)
 		$(CC) -c $(SRC_UTILITIES)
+
+$(CFG): $(OBJ_CFG)
+		$(MAKELIB) $(CFG) $(OBJ_CFG) && $(RANLIB) $(CFG)
+
+$(OBJ_CFG): $(SRC_CFG) $(INCLUDE_CFG)
+		$(CC) -c $(SRC_CFG) -I../include
 
 clean:
 		rm  *.o

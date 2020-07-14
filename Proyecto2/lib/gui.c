@@ -117,6 +117,30 @@ int init_graphics(void)
   }
 }
 
+SDL_Rect get_texture_rect(SDL_Texture *tex, int x, int y)
+{
+  SDL_Rect rect;
+  int w, h;
+  SDL_QueryTexture(tex, NULL, NULL, &w, &h);
+
+  rect.x = x;
+  rect.y = y;
+  rect.w = w;
+  rect.h = h;
+  return rect;
+}
+
+SDL_Rect get_texture_rect_wh(SDL_Texture *tex, int x, int y, int w, int h)
+{
+  SDL_Rect rect;
+
+  rect.x = x;
+  rect.y = y;
+  rect.w = w;
+  rect.h = h;
+  return rect;
+}
+
 void quit_graphics(void)
 {
   IMG_Quit();

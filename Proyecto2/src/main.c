@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include <gui.h>
 #include <utilities.h>
+#include <structs.h>
+#include <cfg.h>
 
 const int SCREEN_WIDTH = 1366;
 const int SCREEN_HEIGHT = 720;
@@ -18,7 +20,31 @@ int main()
     return 1;
   }
 
-  load_map(map);
+  if (!check_bin_dir())
+  {
+    printf("Please execute this program from the bin directory\n");
+    return 1;
+  }
+
+  if (!load_map(map))
+  {
+    printf("Can't read map\n");
+    return 1;
+  }
+
+  if (!init_cfg())
+  {
+    printf("Can't read configuration file\n");
+    return 1;
+  }
+
+  bridge hola;
+  hola.weight = 5;
+  hola.weight = 5;
+
+  load_bridge(&hola);
+
+  printf("%d, %d\n", hola.weight, hola.length);
 
   SDL_Window *win = SDL_CreateWindow("Alien's Community", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
                                      SDL_WINDOW_SHOWN);
@@ -38,13 +64,13 @@ int main()
     return 1;
   }
 
-  SDL_Texture *image = load_texture("assets/images/image5.png", ren);
-  SDL_Texture *BiRoad = load_texture("assets/images/road.jpg", ren);
-  SDL_Texture *Bridge = load_texture("assets/images/bridge.jpg", ren);
-  SDL_Texture *Road = load_texture("assets/images/asphalt.png", ren);
-  SDL_Texture *background = load_texture("assets/images/background2.jpg", ren);
-  SDL_Texture *base_a = load_texture("assets/images/A.png", ren);
-  SDL_Texture *base_b = load_texture("assets/images/B.png", ren);
+  SDL_Texture *image = load_texture("../assets/images/image5.png", ren);
+  SDL_Texture *BiRoad = load_texture("../assets/images/road.jpg", ren);
+  SDL_Texture *Bridge = load_texture("../assets/images/bridge.jpg", ren);
+  SDL_Texture *Road = load_texture("../assets/images/asphalt.png", ren);
+  SDL_Texture *background = load_texture("../assets/images/background2.jpg", ren);
+  SDL_Texture *base_a = load_texture("../assets/images/A.png", ren);
+  SDL_Texture *base_b = load_texture("../assets/images/B.png", ren);
 
   int iw = 100, ih = 100;
   int x = SCREEN_WIDTH / 2 - iw / 2;
@@ -66,6 +92,10 @@ int main()
 
   SDL_Event e;
 
+  SDL_Rect mouse_rect;
+  SDL_Rect img_rect;
+  mouse_rect.w = mouse_rect.h = 1;
+
   while (!quit)
   {
     while (SDL_PollEvent(&e))
@@ -73,6 +103,16 @@ int main()
       if (e.type == SDL_QUIT)
       {
         quit = 1;
+      }
+
+      if ((e.type == SDL_MOUSEBUTTONDOWN) & SDL_BUTTON(SDL_BUTTON_LEFT))
+      {
+        SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
+        img_rect = get_texture_rect_wh(image, x, y, 100, 100);
+        if (SDL_HasIntersection(&mouse_rect, &img_rect))
+        {
+          x = 0;
+        }
       }
     }
 
@@ -106,6 +146,9 @@ int main()
     SDL_RenderPresent(ren);
 
     SDL_Delay(500);
+
+    x += 10;
+    x %= SCREEN_WIDTH;
 
     use_clip++;
     use_clip %= 4;
