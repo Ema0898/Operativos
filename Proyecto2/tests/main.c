@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <libconfig.h>
+#include <pthread.h>
+#include <string.h>
 
 const int X_SIZE = 46;
 const int Y_SIZE = 24;
@@ -16,10 +18,13 @@ typedef struct
 
 void load_map(int map[Y_SIZE][X_SIZE]);
 void load_config(message *hola);
+void *print_message_function(void *param);
+int valdite_args(int argc, char *argv[], int *medium);
+int is_number(char *text);
 
 config_t cfg, *cf;
 
-int main()
+int main(int argc, char *argv[])
 {
   // int map[24][46];
 
@@ -34,32 +39,61 @@ int main()
   //   }
   //   printf("\n");
   // }
-  message hola;
+  // message hola;
 
-  const config_setting_t *retries;
-  const char *base = NULL;
-  int count, n, enabled;
+  // const config_setting_t *retries;
+  // const char *base = NULL;
+  // int count, n, enabled;
 
-  cf = &cfg;
-  config_init(cf);
+  // cf = &cfg;
+  // config_init(cf);
 
-  if (!config_read_file(cf, "ldap.cfg"))
+  // if (!config_read_file(cf, "ldap.cfg"))
+  // {
+  //   fprintf(stderr, "%s:%d - %s\n",
+  //           config_error_file(cf),
+  //           config_error_line(cf),
+  //           config_error_text(cf));
+  //   config_destroy(cf);
+  //   return (EXIT_FAILURE);
+  // }
+
+  // hola.pid = 12;
+
+  // load_config(&hola);
+
+  // printf("%d\n", hola.pid);
+
+  // config_destroy(cf);
+
+  // pthread_t thread1;
+  // int iret1;
+
+  // iret1 = pthread_create(&thread1, NULL, &print_message_function, NULL);
+  // if (iret1)
+  // {
+  //   fprintf(stderr, "Error - pthread_create() return code: %d\n", iret1);
+  //   exit(EXIT_FAILURE);
+  // }
+
+  // printf("pthread_create() for thread 1 returns: %d\n", iret1);
+  // pthread_join(thread1, NULL);
+  int hola = 0;
+  if (!valdite_args(argc, argv, &hola))
   {
-    fprintf(stderr, "%s:%d - %s\n",
-            config_error_file(cf),
-            config_error_line(cf),
-            config_error_text(cf));
-    config_destroy(cf);
-    return (EXIT_FAILURE);
+    return 1;
   }
 
-  hola.pid = 12;
+  if (hola != 0)
+  {
+    printf("Automatic Mode Selected\n");
+    printf("%d\n", hola);
+  }
+  else
+  {
+    printf("Manual Mode Selected\n");
+  }
 
-  load_config(&hola);
-
-  printf("%d\n", hola.pid);
-
-  config_destroy(cf);
   return 0;
 }
 
@@ -104,4 +138,51 @@ void load_map(int map[Y_SIZE][X_SIZE])
 void load_config(message *hola)
 {
   config_lookup_int(cf, "weight", &hola->pid);
+}
+
+void *print_message_function(void *param)
+{
+  printf("Hello World!\n");
+}
+
+int valdite_args(int argc, char *argv[], int *medium)
+{
+  if (argc != 3)
+  {
+    printf("Usage: ./main <operation_mode (manual/automatic)> <time_medium>\n");
+    return 0;
+  }
+
+  if (strcmp(argv[1], "manual") != 0 && strcmp(argv[1], "automatic") != 0)
+  {
+    printf("Please insert a correct operation mode\n");
+    return 0;
+  }
+
+  if (!is_number(argv[2]))
+  {
+    printf("Please Insert a Correct Time Medium\n");
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "automatic"))
+  {
+    *medium = atoi(argv[2]);
+  }
+
+  return 1;
+}
+
+int is_number(char *text)
+{
+  int j;
+  j = strlen(text);
+  while (j--)
+  {
+    if (text[j] > 47 && text[j] < 58)
+      continue;
+
+    return 0;
+  }
+  return 1;
 }

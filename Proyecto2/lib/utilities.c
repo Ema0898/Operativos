@@ -152,3 +152,46 @@ int check_bin_dir(void)
 
   return result;
 }
+
+int valdite_args(int argc, char *argv[], int *medium)
+{
+  if (argc != 3)
+  {
+    printf("Usage: ./main <operation_mode (manual/automatic)> <time_medium>\n");
+    return 0;
+  }
+
+  if (strcmp(argv[1], "manual") != 0 && strcmp(argv[1], "automatic") != 0)
+  {
+    printf("Please insert a correct operation mode\n");
+    return 0;
+  }
+
+  if (!is_number(argv[2]))
+  {
+    printf("Please Insert a Correct Time Medium\n");
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "automatic"))
+  {
+    *medium = atoi(argv[2]);
+  }
+
+  return 1;
+}
+
+/* check if a string is a number */
+int is_number(char *text)
+{
+  int j;
+  j = strlen(text);
+  while (j--)
+  {
+    if (text[j] > 47 && text[j] < 58)
+      continue;
+
+    return 0;
+  }
+  return 1;
+}

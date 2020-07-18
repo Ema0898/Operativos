@@ -3,6 +3,8 @@
 #include <utilities.h>
 #include <structs.h>
 #include <cfg.h>
+#include <pthread.h>
+#include <unistd.h>
 
 const int SCREEN_WIDTH = 1366;
 const int SCREEN_HEIGHT = 720;
@@ -13,7 +15,11 @@ const int Y_TILES = 24;
 
 int map[24][46];
 
-int main()
+int tmp;
+
+void *print_message_function(void *param);
+
+int main(int argc, char *argv[])
 {
   if (init_graphics() != 0)
   {
@@ -38,13 +44,40 @@ int main()
     return 1;
   }
 
+  int medium = 0;
+  if (!valdite_args(argc, argv, &medium))
+  {
+    return 1;
+  }
+
+  /* Test Start*/
+  if (medium != 0)
+  {
+    printf("Automatic Mode Selected\n");
+    printf("%d\n", medium);
+  }
+  else
+  {
+    printf("Manual Mode Selected\n");
+  }
+
   bridge hola;
   hola.weight = 5;
   hola.weight = 5;
 
   load_bridge(&hola);
 
-  printf("%d, %d\n", hola.weight, hola.length);
+  pthread_t thread1;
+  int iret1;
+
+  iret1 = pthread_create(&thread1, NULL, &print_message_function, NULL);
+  if (iret1)
+  {
+    fprintf(stderr, "Error - pthread_create() return code: %d\n", iret1);
+    exit(EXIT_FAILURE);
+  }
+
+  /* Test End */
 
   SDL_Window *win = SDL_CreateWindow("Alien's Community", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
                                      SDL_WINDOW_SHOWN);
@@ -108,10 +141,10 @@ int main()
       if ((e.type == SDL_MOUSEBUTTONDOWN) & SDL_BUTTON(SDL_BUTTON_LEFT))
       {
         SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
-        img_rect = get_texture_rect_wh(image, x, y, 100, 100);
+        img_rect = get_texture_rect_wh(image, tmp, y, 100, 100);
         if (SDL_HasIntersection(&mouse_rect, &img_rect))
         {
-          x = 0;
+          tmp = 0;
         }
       }
     }
@@ -142,7 +175,7 @@ int main()
     render_scale_texture(base_a, ren, 10, 200, 170, 170);
     render_scale_texture(base_b, ren, SCREEN_WIDTH - 180, 235, 170, 170);
 
-    render_sheet_texture(image, ren, x, y, &clips[use_clip]);
+    render_sheet_texture(image, ren, tmp, y, &clips[use_clip]);
     SDL_RenderPresent(ren);
 
     SDL_Delay(500);
@@ -160,5 +193,17 @@ int main()
 
   quit_graphics();
 
+  pthread_cancel(iret1);
+
   return 0;
+}
+
+void *print_message_function(void *param)
+{
+  while (1)
+  {
+    tmp += 10;
+    tmp %= SCREEN_WIDTH;
+    sleep(1);
+  }
 }
