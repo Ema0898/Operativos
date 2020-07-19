@@ -17,10 +17,15 @@ const int Y_TILES = 24;
 
 int map[24][46];
 
+point positions[3];
+int list_size = 0;
+
 point actual_pos;
 
 void *print_message_function(void *param);
 void move(point *actual, point dest, int velocity);
+int stop_move(point actual, point dest, float dist_x, float dist_y);
+int spawn_alien(void);
 
 int main(int argc, char *argv[])
 {
@@ -90,8 +95,15 @@ int main(int argc, char *argv[])
 
   /* Test End */
 
+  /* Alien Position Initialization */
   actual_pos.x = 50;
   actual_pos.y = 300;
+
+  // positions[0].x = 200;
+  // positions[0].y = 300;
+
+  // positions[1].x = 200;
+  // positions[1].y = 500;
 
   SDL_Window *win = SDL_CreateWindow("Alien's Community", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
                                      SDL_WINDOW_SHOWN);
@@ -148,6 +160,20 @@ int main(int argc, char *argv[])
         quit = 1;
       }
 
+      if (e.type == SDL_KEYDOWN)
+      {
+        switch (e.key.keysym.sym)
+        {
+        case SDLK_a:
+          printf("KEY A PRESSED\n");
+          spawn_alien();
+          break;
+
+        default:
+          break;
+        }
+      }
+
       if ((e.type == SDL_MOUSEBUTTONDOWN) & SDL_BUTTON(SDL_BUTTON_LEFT))
       {
         SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
@@ -187,6 +213,13 @@ int main(int argc, char *argv[])
     render_scale_texture(base_b, ren, SCREEN_WIDTH - 180, 235, 170, 170);
 
     render_sheet_texture(image, ren, actual_pos.x, actual_pos.y, &clips[use_clip]);
+
+    for (int i = 0; i < 3; ++i)
+    {
+      if (positions[i].x != 0 && positions[i].y != 0)
+        render_sheet_texture(image, ren, positions[i].x, positions[i].y, &clips[use_clip]);
+    }
+
     SDL_RenderPresent(ren);
 
     SDL_Delay(0.016666);
@@ -204,6 +237,27 @@ int main(int argc, char *argv[])
   pthread_cancel(iret1);
 
   return 0;
+}
+
+int stop_move(point actual, point dest, float dist_x, float dist_y)
+{
+  int cond_x, cond_y;
+
+  if (dist_x > 0)
+    cond_x = actual.x >= dest.x;
+  else if (dist_x < 0)
+    cond_x = actual.x <= dest.x;
+  else
+    cond_x = actual.x == dest.x;
+
+  if (dist_y > 0)
+    cond_y = actual.y >= dest.y;
+  else if (dist_y < 0)
+    cond_y = actual.y <= dest.y;
+  else
+    cond_y = actual.y == dest.y;
+
+  return cond_x && cond_y;
 }
 
 void move(point *actual, point dest, int velocity)
@@ -225,15 +279,16 @@ void move(point *actual, point dest, int velocity)
     actual->x += dist_x * velocity;
     actual->y += dist_y * velocity;
 
-    // printf("%f\n", actual->x);
-
-    if (actual->x >= dest.x && actual->y <= dest.y)
+    if (stop_move(actual_pos, dest, dist_x, dist_y))
     {
       moving = 0;
     }
 
     usleep(16666);
   }
+
+  actual->x = ceil(actual->x);
+  actual->y = ceil(actual->y);
 }
 
 void *print_message_function(void *param)
@@ -242,20 +297,34 @@ void *print_message_function(void *param)
 
   point dest1;
   dest1.x = 100;
-  dest1.y = 80;
+  dest1.y = 500;
 
   point dest2;
-  dest2.x = 300;
-  dest2.y = 80;
+  dest2.x = 400;
+  dest2.y = 300;
 
   while (moving)
   {
     move(&actual_pos, dest1, 3);
-    actual_pos.x = dest1.x;
-    actual_pos.y = dest1.y;
     move(&actual_pos, dest2, 1);
     moving = 0;
   }
 
   printf("Thread end\n");
+}
+
+int spawn_alien(void)
+{
+  if (list_size > 2)
+  {
+    return -1;
+  }
+
+  positions[list_size].x = (list_size + 1) * 100;
+  positions[list_size].y = (list_size + 1) * 100;
+
+  list_size++;
+
+  printf("List SIZE = %d\n", list_size);
+  printf("POSX = %d\n", (list_size + 1) * 100);
 }
