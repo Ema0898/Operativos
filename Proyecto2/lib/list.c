@@ -1,133 +1,150 @@
-#include <stdio.h>
+/* llist.c
+ * Generic Linked List implementation
+ */
+
 #include <stdlib.h>
-#include <structs.h>
+#include <stdio.h>
+#include "list.h"
 
-int size = 0;
-
-void print_list(node_t *head)
+llist *llist_create(void *new_data)
 {
-  node_t *current = head;
+    struct node *new_node;
 
-  while (current != NULL)
-  {
-    printf("%d\n", current->val);
-    current = current->next;
-  }
+    llist *new_list = (llist *)malloc(sizeof (llist));
+    *new_list = (struct node *)malloc(sizeof (struct node));
+    
+    new_node = *new_list;
+    new_node->data = new_data;
+    new_node->next = NULL;
+    return new_list;
 }
 
-void add_end(node_t *head, int val)
+void llist_free(llist *list)
 {
-  node_t *current = head;
-  while (current->next != NULL)
-  {
-    current = current->next;
-  }
+    struct node *curr = *list;
+    struct node *next;
 
-  /* now we can add a new variable */
-  current->next = (node_t *)malloc(sizeof(node_t));
-  current->next->val = val;
-  current->next->next = NULL;
-
-  size++;
-}
-
-void add_start(node_t **head, int val)
-{
-  node_t *new_node;
-  new_node = (node_t *)malloc(sizeof(node_t));
-
-  new_node->val = val;
-  new_node->next = *head;
-  *head = new_node;
-
-  size++;
-}
-
-int remove_start(node_t **head)
-{
-  int retval = -1;
-  node_t *next_node = NULL;
-
-  if (*head == NULL)
-  {
-    return -1;
-  }
-
-  next_node = (*head)->next;
-  retval = (*head)->val;
-  free(*head);
-  *head = next_node;
-
-  size--;
-
-  return retval;
-}
-
-int remove_last(node_t *head)
-{
-  int retval = 0;
-  /* if there is only one item in the list, remove it */
-  if (head->next == NULL)
-  {
-    retval = head->val;
-    free(head);
-    return retval;
-  }
-
-  /* get to the second to last node in the list */
-  node_t *current = head;
-  while (current->next->next != NULL)
-  {
-    current = current->next;
-  }
-
-  /* now current points to the second to last item of the list, so let's remove current->next */
-  retval = current->next->val;
-  free(current->next);
-  current->next = NULL;
-
-  size--;
-
-  return retval;
-}
-
-int remove_by_index(node_t **head, int n)
-{
-  int i = 0;
-  int retval = -1;
-  node_t *current = *head;
-  node_t *temp_node = NULL;
-
-  if (n >= size)
-  {
-    return -1;
-  }
-
-  if (n == 0)
-  {
-    return remove_start(head);
-  }
-
-  for (i = 0; i < n - 1; i++)
-  {
-    if (current->next == NULL)
-    {
-      return -1;
+    while (curr != NULL) {
+        next = curr->next;
+        free(curr);
+        curr = next;
     }
-    current = current->next;
-  }
 
-  temp_node = current->next;
-  retval = temp_node->val;
-  current->next = temp_node->next;
-  free(temp_node);
-
-  size--;
-
-  return retval;
+    free(list);
 }
 
-int get_size()
+void llist_push(llist *list, void *data)
 {
-  return size;
+    struct node *head;
+    struct node *new_node;
+    if (list == NULL || *list == NULL) {
+        fprintf(stderr, "llist_add_inorder: list is null\n");
+    }
+
+    head = *list;
+    
+    // Head is empty node
+    if (head->data == NULL){
+        head->data = data;
+    // Head is not empty, add new node to front
+    } else {
+        new_node = malloc(sizeof (struct node));
+        new_node->data = data;
+        new_node->next = head;
+
+        *list = new_node;
+    }
+}
+
+void* llist_pop(llist *list)
+{
+    void *popped_data;
+    struct node *head = *list;
+
+    if (list == NULL || head->data == NULL)
+        return NULL;
+    
+    popped_data = head->data;
+    *list = head->next;
+
+    free(head);
+
+    return popped_data;
+}
+
+int llist_get_size(llist* list) {
+  struct node* head = *list;
+
+  if(head->data == NULL) {
+    return 0;
+  }
+
+  int counter = 1;
+
+  while(head->next != NULL) {
+    head = head->next;
+    counter += 1;
+  }
+  return counter;
+}
+
+void* llist_get_by_index(llist *list, int index) {
+  void *popped_data;
+  struct node *curr = *list;
+  int list_size = llist_get_size(list);
+
+  if(list_size <= index) {
+    printf("Index out of range\n");
+    return NULL;
+  }
+
+  for(int i = 0; i < index; i++){
+    curr = curr->next;
+  }
+
+  popped_data = curr->data;
+
+  return popped_data;
+}
+
+int llist_remove_by_index(llist *list, int Id)
+{
+    struct node *curr = *list;
+    struct node *temp = *list;
+    if (list == NULL || *list == NULL) {
+      return 1;
+    }
+
+    if (llist_get_size(list)-1 < Id){
+      return 1;
+    }
+
+    if (Id == 0){
+      *list = curr->next;
+      return 0;
+    }
+    
+    for(int i = 0; i < Id-1; i++){
+      if (list == NULL || curr->next == NULL)
+        return 1;
+      curr = curr->next;
+      temp = temp->next;
+    }
+
+    temp = temp->next;
+    curr->next = temp->next;
+
+    free(temp);
+    return 0;
+}
+
+void llist_print(llist *list, void (*print)(void *))
+{
+    struct node *curr = *list;
+    while (curr != NULL) {
+        print(curr->data);
+        printf(" ");
+        curr = curr->next;
+    }
+    putchar('\n');
 }
