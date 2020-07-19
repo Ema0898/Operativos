@@ -9,4 +9,16 @@ typedef struct
   int length;
 } bridge;
 
+typedef struct node
+{
+  int val;
+  struct node *next;
+} node_t;
+
+typedef struct
+{
+  float x;
+  float y;
+} point;
+
 #endif

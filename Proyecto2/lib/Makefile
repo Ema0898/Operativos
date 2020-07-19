@@ -21,11 +21,18 @@ SRC_CFG=$(LIB_CFG).c
 CFG=$(APP_CFG).a
 INCLUDE_CFG=../include/cfg.h
 
+APP_LIST=liblist
+LIB_LIST=list
+OBJ_LIST=$(LIB_LIST).o
+SRC_LIST=$(LIB_LIST).c
+LIST=$(APP_LIST).a
+INCLUDE_LIST=../include/list.h
+
 CC=gcc
 MAKELIB=ar rv
 RANLIB=ranlib
 
-all: $(GUI) $(UTILITIES) $(CFG) clean
+all: $(GUI) $(UTILITIES) $(CFG) $(LIST) clean
 
 $(GUI): $(OBJ_GUI)
 		$(MAKELIB) $(GUI) $(OBJ_GUI) && $(RANLIB) $(GUI)
@@ -44,6 +51,12 @@ $(CFG): $(OBJ_CFG)
 
 $(OBJ_CFG): $(SRC_CFG) $(INCLUDE_CFG)
 		$(CC) -c $(SRC_CFG) -I../include
+
+$(LIST): $(OBJ_LIST)
+		$(MAKELIB) $(LIST) $(OBJ_LIST) && $(RANLIB) $(LIST)
+
+$(OBJ_LIST): $(SRC_LIST) $(INCLUDE_LIST)
+		$(CC) -c $(SRC_LIST) -I../include
 
 clean:
 		rm  *.o

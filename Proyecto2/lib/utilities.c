@@ -153,6 +153,21 @@ int check_bin_dir(void)
   return result;
 }
 
+/* check if a string is a number */
+int is_number(char *text)
+{
+  int j;
+  j = strlen(text);
+  while (j--)
+  {
+    if (text[j] > 47 && text[j] < 58)
+      continue;
+
+    return 0;
+  }
+  return 1;
+}
+
 int valdite_args(int argc, char *argv[], int *medium)
 {
   if (argc != 3)
@@ -178,20 +193,5 @@ int valdite_args(int argc, char *argv[], int *medium)
     *medium = atoi(argv[2]);
   }
 
-  return 1;
-}
-
-/* check if a string is a number */
-int is_number(char *text)
-{
-  int j;
-  j = strlen(text);
-  while (j--)
-  {
-    if (text[j] > 47 && text[j] < 58)
-      continue;
-
-    return 0;
-  }
   return 1;
 }

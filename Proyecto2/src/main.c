@@ -5,6 +5,8 @@
 #include <cfg.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <math.h>
+#include <list.h>
 
 const int SCREEN_WIDTH = 1366;
 const int SCREEN_HEIGHT = 720;
@@ -15,9 +17,10 @@ const int Y_TILES = 24;
 
 int map[24][46];
 
-int tmp;
+point actual_pos;
 
 void *print_message_function(void *param);
+void move(point *actual, point dest, int velocity);
 
 int main(int argc, char *argv[])
 {
@@ -67,6 +70,14 @@ int main(int argc, char *argv[])
 
   load_bridge(&hola);
 
+  node_t *head = NULL;
+
+  add_start(&head, 1);
+  add_end(head, 2);
+
+  printf("Original List\n");
+  print_list(head);
+
   pthread_t thread1;
   int iret1;
 
@@ -78,6 +89,9 @@ int main(int argc, char *argv[])
   }
 
   /* Test End */
+
+  actual_pos.x = 50;
+  actual_pos.y = 300;
 
   SDL_Window *win = SDL_CreateWindow("Alien's Community", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
                                      SDL_WINDOW_SHOWN);
@@ -98,25 +112,21 @@ int main(int argc, char *argv[])
   }
 
   SDL_Texture *image = load_texture("../assets/images/image5.png", ren);
-  SDL_Texture *BiRoad = load_texture("../assets/images/road.jpg", ren);
-  SDL_Texture *Bridge = load_texture("../assets/images/bridge.jpg", ren);
-  SDL_Texture *Road = load_texture("../assets/images/asphalt.png", ren);
-  SDL_Texture *background = load_texture("../assets/images/background2.jpg", ren);
+  SDL_Texture *brigde_road = load_texture("../assets/images/road.png", ren);
+  SDL_Texture *bridge = load_texture("../assets/images/bridge.png", ren);
+  SDL_Texture *road = load_texture("../assets/images/asphalt.png", ren);
+  SDL_Texture *background = load_texture("../assets/images/background2.png", ren);
   SDL_Texture *base_a = load_texture("../assets/images/A.png", ren);
   SDL_Texture *base_b = load_texture("../assets/images/B.png", ren);
-
-  int iw = 100, ih = 100;
-  int x = SCREEN_WIDTH / 2 - iw / 2;
-  int y = SCREEN_HEIGHT / 2 - ih / 2;
 
   SDL_Rect clips[4];
 
   for (int i = 0; i < 4; ++i)
   {
-    clips[i].x = i / 2 * iw;
-    clips[i].y = i % 2 * ih;
-    clips[i].w = iw;
-    clips[i].h = ih;
+    clips[i].x = i / 2 * 100;
+    clips[i].y = i % 2 * 100;
+    clips[i].w = 100;
+    clips[i].h = 100;
   }
 
   int use_clip = 0;
@@ -141,10 +151,11 @@ int main(int argc, char *argv[])
       if ((e.type == SDL_MOUSEBUTTONDOWN) & SDL_BUTTON(SDL_BUTTON_LEFT))
       {
         SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
-        img_rect = get_texture_rect_wh(image, tmp, y, 100, 100);
+        img_rect = get_texture_rect_wh(image, actual_pos.x, actual_pos.y, 100, 100);
         if (SDL_HasIntersection(&mouse_rect, &img_rect))
         {
-          tmp = 0;
+          actual_pos.x = 50;
+          actual_pos.y = 300;
         }
       }
     }
@@ -159,15 +170,15 @@ int main(int argc, char *argv[])
       {
         if (map[i][j] == 1)
         {
-          render_scale_texture(Road, ren, j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          render_scale_texture(road, ren, j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
         else if (map[i][j] == 2)
         {
-          render_scale_texture(BiRoad, ren, j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          render_scale_texture(brigde_road, ren, j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
         else if (map[i][j] == 3)
         {
-          render_scale_texture(Bridge, ren, j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          render_scale_texture(bridge, ren, 15 + j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
       }
     }
@@ -175,13 +186,10 @@ int main(int argc, char *argv[])
     render_scale_texture(base_a, ren, 10, 200, 170, 170);
     render_scale_texture(base_b, ren, SCREEN_WIDTH - 180, 235, 170, 170);
 
-    render_sheet_texture(image, ren, tmp, y, &clips[use_clip]);
+    render_sheet_texture(image, ren, actual_pos.x, actual_pos.y, &clips[use_clip]);
     SDL_RenderPresent(ren);
 
-    SDL_Delay(500);
-
-    x += 10;
-    x %= SCREEN_WIDTH;
+    SDL_Delay(0.016666);
 
     use_clip++;
     use_clip %= 4;
@@ -198,12 +206,56 @@ int main(int argc, char *argv[])
   return 0;
 }
 
+void move(point *actual, point dest, int velocity)
+{
+  float dist_x = dest.x - actual->x;
+  float dist_y = dest.y - actual->y;
+
+  float norm = sqrt(pow(dist_x, 2) + pow(dist_y, 2));
+
+  dist_x /= norm;
+  dist_y /= norm;
+
+  int moving = 1;
+
+  printf("HOLA %f\n", actual->y);
+
+  while (moving)
+  {
+    actual->x += dist_x * velocity;
+    actual->y += dist_y * velocity;
+
+    // printf("%f\n", actual->x);
+
+    if (actual->x >= dest.x && actual->y <= dest.y)
+    {
+      moving = 0;
+    }
+
+    usleep(16666);
+  }
+}
+
 void *print_message_function(void *param)
 {
-  while (1)
+  int moving = 1;
+
+  point dest1;
+  dest1.x = 100;
+  dest1.y = 80;
+
+  point dest2;
+  dest2.x = 300;
+  dest2.y = 80;
+
+  while (moving)
   {
-    tmp += 10;
-    tmp %= SCREEN_WIDTH;
-    sleep(1);
+    move(&actual_pos, dest1, 3);
+    actual_pos.x = dest1.x;
+    actual_pos.y = dest1.y;
+    move(&actual_pos, dest2, 1);
+    moving = 0;
   }
+
+  printf("Thread end\n");
 }
