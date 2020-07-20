@@ -1,10 +1,7 @@
-/* llist.c
- * Generic Linked List implementation
- */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include "list.h"
+#include <structs.h>
 
 llist *llist_create(void *new_data)
 {
@@ -54,6 +51,25 @@ void llist_push(llist *list, void *data)
 
         *list = new_node;
     }
+}
+
+void llist_insert_end(llist *list, void* data){
+  struct node *head;
+  struct node *new_node;
+
+  head = *list;
+
+  if (head->data == NULL){
+    head->data = data;
+  } else {
+    while(head->next != NULL) {
+      head = head->next;
+    }
+    new_node = (struct node*)malloc(sizeof(struct node));
+    new_node->data = data;
+    new_node->next = NULL;
+    head->next = new_node;
+  }
 }
 
 void* llist_pop(llist *list)
@@ -138,13 +154,51 @@ int llist_remove_by_index(llist *list, int Id)
     return 0;
 }
 
-void llist_print(llist *list, void (*print)(void *))
+void llist_print(llist *list)
 {
-    struct node *curr = *list;
-    while (curr != NULL) {
-        print(curr->data);
-        printf(" ");
-        curr = curr->next;
-    }
-    putchar('\n');
+  struct node *curr = *list;
+  alien *thisAlien;
+  while (curr != NULL) {
+    thisAlien = (alien *)curr->data;
+    printf("Alien: %f %f %d\n\n", thisAlien->accumulator, thisAlien->duration, thisAlien->working);
+    curr = curr->next;
+  }
+  putchar('\n');
 }
+
+// /* Bubble sort the given linked list */
+// void bubbleSort(llist *list){ 
+//   int swapped, i; 
+//   struct node *ptr1; 
+//   struct node *lptr = NULL; 
+
+//   /* Checking for empty list */
+//   if (list == NULL) 
+//     return; 
+
+//   do
+//   { 
+//     swapped = 0; 
+//     ptr1 = list; 
+
+//     while (ptr1->next != lptr) 
+//     { 
+//       if (ptr1->data > ptr1->next->data) 
+//       {  
+//         swap(ptr1, ptr1->next); 
+//         swapped = 1; 
+//       } 
+//       ptr1 = ptr1->next; 
+//     } 
+//     lptr = ptr1; 
+//   } 
+//   while (swapped); 
+// } 
+  
+// /* function to swap data of two nodes a and b*/
+// void swap(struct node *a, struct node *b){ 
+//   struct node *temp;
+//   temp = a->data; 
+//   a->data = b->data; 
+//   b->data = temp; 
+// } 

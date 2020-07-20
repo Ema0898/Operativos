@@ -22,10 +22,16 @@ void llist_push(llist *list, void *data);
 void* llist_pop(llist *list);
 
 /* llist_print: print linked list */
-void llist_print(llist *list, void (*print)(void *data));
+void llist_print(llist *list);
+
+void llist_insert_end(llist *list, void* data);
 
 void* llist_get_by_index(llist *list, int index);
 
 int llist_get_size(llist* list);
 
 int llist_remove_by_index(llist *list, int Id);
+
+// void bubbleSort(llist *list);
+
+// void swap(struct node *a, struct node *b);
