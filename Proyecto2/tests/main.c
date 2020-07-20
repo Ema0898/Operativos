@@ -21,6 +21,7 @@ void load_config(message *hola);
 void *print_message_function(void *param);
 int valdite_args(int argc, char *argv[], int *medium);
 int is_number(char *text);
+void hola(message *list, int *size);
 
 config_t cfg, *cf;
 
@@ -78,21 +79,34 @@ int main(int argc, char *argv[])
 
   // printf("pthread_create() for thread 1 returns: %d\n", iret1);
   // pthread_join(thread1, NULL);
-  int hola = 0;
-  if (!valdite_args(argc, argv, &hola))
-  {
-    return 1;
-  }
+  // int hola = 0;
+  // if (!valdite_args(argc, argv, &hola))
+  // {
+  //   return 1;
+  // }
 
-  if (hola != 0)
-  {
-    printf("Automatic Mode Selected\n");
-    printf("%d\n", hola);
-  }
-  else
-  {
-    printf("Manual Mode Selected\n");
-  }
+  // if (hola != 0)
+  // {
+  //   printf("Automatic Mode Selected\n");
+  //   printf("%d\n", hola);
+  // }
+  // else
+  // {
+  //   printf("Manual Mode Selected\n");
+  // }
+
+  message list[1];
+
+  int size = 0;
+
+  list[0].pid = 5;
+
+  printf("LIST PID = %d\n", list[0].pid);
+
+  hola(list, &size);
+
+  printf("LIST PID = %d\n", list[0].pid);
+  printf("LIST SIZE = %d\n", size);
 
   return 0;
 }
@@ -185,4 +199,11 @@ int is_number(char *text)
     return 0;
   }
   return 1;
+}
+
+void hola(message *list, int *size)
+{
+  list[*size].pid = 10;
+
+  *size = *size + 1;
 }

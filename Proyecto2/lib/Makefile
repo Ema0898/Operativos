@@ -28,11 +28,18 @@ SRC_LIST=$(LIB_LIST).c
 LIST=$(APP_LIST).a
 INCLUDE_LIST=../include/list.h
 
+APP_MOVE=libmove
+LIB_MOVE=move
+OBJ_MOVE=$(LIB_MOVE).o
+SRC_MOVE=$(LIB_MOVE).c
+MOVE=$(APP_MOVE).a
+INCLUDE_MOVE=../include/move.h
+
 CC=gcc
 MAKELIB=ar rv
 RANLIB=ranlib
 
-all: $(GUI) $(UTILITIES) $(CFG) $(LIST) clean
+all: $(GUI) $(UTILITIES) $(CFG) $(LIST) $(MOVE) clean
 
 $(GUI): $(OBJ_GUI)
 		$(MAKELIB) $(GUI) $(OBJ_GUI) && $(RANLIB) $(GUI)
@@ -57,6 +64,12 @@ $(LIST): $(OBJ_LIST)
 
 $(OBJ_LIST): $(SRC_LIST) $(INCLUDE_LIST)
 		$(CC) -c $(SRC_LIST) -I../include
+
+$(MOVE): $(OBJ_MOVE)
+		$(MAKELIB) $(MOVE) $(OBJ_MOVE) && $(RANLIB) $(MOVE)
+
+$(OBJ_MOVE): $(SRC_MOVE) $(INCLUDE_MOVE)
+		$(CC) -c $(SRC_MOVE) -I../include
 
 clean:
 		rm  *.o
