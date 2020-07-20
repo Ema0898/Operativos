@@ -1,5 +1,6 @@
 #ifndef _STRUCTS_H
 #define _STRUCTS_H
+#include <sys/time.h>
 
 /* structs used for bridge variables */
 
@@ -9,11 +10,17 @@ typedef struct
   int length;
 } bridge;
 
-typedef struct node
+typedef struct
 {
-  int val;
-  struct node *next;
-} node_t;
+  float   priority; // **alien
+  float   duration; // *(*alien + 4)
+  struct timeval work_init_time;
+  struct timeval last_update;
+  float   progress;
+  float   accumulator;
+  short   working;
+  int *lottery_numbers;
+} alien;
 
 typedef struct
 {
