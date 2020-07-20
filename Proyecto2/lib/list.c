@@ -104,6 +104,32 @@ int llist_get_size(llist* list) {
   return counter;
 }
 
+void llist_insert_scheduler_attribute(llist *list, void *data, int comparation){
+  /**
+  *
+  * comparation == 0 // Prioridad
+  * comparation == 1 // Duracion
+  *
+  */
+  struct node *head;
+  struct node *new_node;
+  float atributo = *((float*) data + comparation);
+  int index = 0;
+
+  head = *list;
+
+  if (head->data == NULL){
+    head->data = data;
+  } else {
+    while(*((float*)head->data + comparation) <= atributo) {
+      index++;
+      if(head->next == NULL) break;
+      head = head->next;
+    }
+    llist_insert_by_index(list, data, index);
+  }
+}
+
 void* llist_get_by_index(llist *list, int index) {
   void *popped_data;
   struct node *curr = *list;
@@ -160,45 +186,58 @@ void llist_print(llist *list)
   alien *thisAlien;
   while (curr != NULL) {
     thisAlien = (alien *)curr->data;
-    printf("Alien: %f %f %d\n\n", thisAlien->accumulator, thisAlien->duration, thisAlien->working);
+    printf("Alien: Duracion - %f, Prioridad - %f\n\n", thisAlien->duration, thisAlien->priority);
     curr = curr->next;
   }
-  putchar('\n');
 }
 
-// /* Bubble sort the given linked list */
-// void bubbleSort(llist *list){ 
-//   int swapped, i; 
-//   struct node *ptr1; 
-//   struct node *lptr = NULL; 
+int llist_insert_by_index(llist *list,void *data, int Id)
+{
+    struct node *curr = *list;
+    struct node *new_node;
+    if (list == NULL || *list == NULL) {
+      return 1;
+    }
 
-//   /* Checking for empty list */
-//   if (list == NULL) 
-//     return; 
+    if (llist_get_size(list)-1 < Id) {
+      llist_insert_end(list,data);
+    } else if(Id == 0) {
+      llist_push(list,data);
+    } else {
+      for(int i = 0; i < Id-1; i++){
+        if (list == NULL || curr->next == NULL)
+          return 1;
+        curr = curr->next;
+      }
+      new_node = malloc(sizeof (struct node));
+      new_node->data = data;
+      new_node->next = curr->next;
+      curr->next = new_node;
+    }
+    return 0;
+}
 
-//   do
-//   { 
-//     swapped = 0; 
-//     ptr1 = list; 
+void* llist_get_winner(llist *list, int winner) {
+  alien* new_alien;
+  void *popped_data;
+  struct node *curr = *list;
+  int list_size = llist_get_size(list);
 
-//     while (ptr1->next != lptr) 
-//     { 
-//       if (ptr1->data > ptr1->next->data) 
-//       {  
-//         swap(ptr1, ptr1->next); 
-//         swapped = 1; 
-//       } 
-//       ptr1 = ptr1->next; 
-//     } 
-//     lptr = ptr1; 
-//   } 
-//   while (swapped); 
-// } 
-  
-// /* function to swap data of two nodes a and b*/
-// void swap(struct node *a, struct node *b){ 
-//   struct node *temp;
-//   temp = a->data; 
-//   a->data = b->data; 
-//   b->data = temp; 
-// } 
+  if(list_size <= 1) {
+    printf("Lista vacia\n");
+    return NULL;
+  }
+
+  printf("List size get winner: %d\n", list_size);
+
+  for(int i = 0; i < list_size ; i++){
+    new_alien = (alien*) curr->data;
+    if ((*new_alien->lottery_numbers == winner || *(new_alien->lottery_numbers + 1) == winner)  && (new_alien->working != 1)){
+      printf("Ganador el tiquete %d con el alien con duracion %f!\n", winner, new_alien->duration);
+      return curr->data;
+    }
+    curr = curr->next;
+  }
+
+  return NULL;
+}

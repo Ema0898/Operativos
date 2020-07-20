@@ -1,6 +1,8 @@
 /* llist.h
  * Generic Linked List
  */
+#ifndef _LIST_H
+#define _LIST_H
 
 struct node {
     void *data;
@@ -26,12 +28,17 @@ void llist_print(llist *list);
 
 void llist_insert_end(llist *list, void* data);
 
+int llist_insert_by_index(llist *list,void *data, int Id);
+
+void llist_insert_scheduler_attribute(llist *list, void *data, int comparation);
+
 void* llist_get_by_index(llist *list, int index);
 
 int llist_get_size(llist* list);
 
 int llist_remove_by_index(llist *list, int Id);
 
-// void bubbleSort(llist *list);
+void* llist_get_winner(llist *list, int winner);
 
-// void swap(struct node *a, struct node *b);
+
+#endif

@@ -12,12 +12,14 @@ typedef struct
 
 typedef struct
 {
+  float   priority; // **alien
+  float   duration; // *(*alien + 4)
   struct timeval work_init_time;
   struct timeval last_update;
   float   progress;
-  float   duration;
   float   accumulator;
   short   working;
+  int *lottery_numbers;
 } alien;
 
 typedef struct
