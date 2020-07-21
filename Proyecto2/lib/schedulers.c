@@ -67,7 +67,6 @@ void lottery_scheduler(llist* aliens, void* data) {
   int* tickets_to_give = (int*)malloc(sizeof(int) * 2);
 
   for(int i = 0; i <= new_alien->priority; i++) {
-    printf("Dando el tiquete numero %d al alien\n", lottery_number_now);
     *(tickets_to_give + i) = lottery_number_now;
     llist_insert_end(possible_numbers, (void*)(tickets_to_give + i));
     lottery_number_now++;
