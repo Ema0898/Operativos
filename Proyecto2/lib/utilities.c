@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <time.h>
 
 int load_map(int map[24][46])
 {
@@ -194,4 +195,9 @@ int valdite_args(int argc, char *argv[], int *medium)
   }
 
   return 1;
+}
+
+int generate_random(int upper, int lower)
+{
+  return (rand() % (upper - lower + 1)) + lower;
 }

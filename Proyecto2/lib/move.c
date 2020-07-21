@@ -24,7 +24,7 @@ int stop_move(point *actual, point dest, float dist_x, float dist_y)
   return cond_x && cond_y;
 }
 
-void move(point *actual, point dest, int velocity)
+void move(point *actual, point dest, float velocity)
 {
   float dist_x = dest.x - actual->x;
   float dist_y = dest.y - actual->y;
@@ -53,18 +53,43 @@ void move(point *actual, point dest, int velocity)
   actual->y = ceil(actual->y);
 }
 
-void move_bridge(point *actual, float *progress)
+void move_bridge(point *actual, float *progress, int direcction)
 {
   float init_pos_y = actual->y;
   int bridge_height = 120;
 
   while (*progress < 1)
   {
-    actual->y = (bridge_height * (*progress)) * -1 + init_pos_y;
-    *progress = *progress + 0.001;
+    actual->y = (bridge_height * (*progress)) * direcction + init_pos_y;
+    *progress = *progress + 0.01;
 
     usleep(16666);
   }
+}
+
+float generate_alien_velocity(int type, int base_velocity, int percentage)
+{
+  float result = 1;
+
+  switch (type)
+  {
+  case 0:
+    result = base_velocity;
+    break;
+
+  case 1:
+    result = base_velocity + (base_velocity * 0.2);
+    break;
+
+  case 2:
+    result = base_velocity + base_velocity * (percentage / 100);
+    break;
+
+  default:
+    break;
+  }
+
+  return result;
 }
 
 void init_routes(point routes_a[8][3], point routes_b[8][3])
