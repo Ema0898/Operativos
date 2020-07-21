@@ -28,7 +28,6 @@ SRC_LIST=$(LIB_LIST).c
 LIST=$(APP_LIST).a
 INCLUDE_LIST=../include/list.h
 
-
 APP_MOVE=libmove
 LIB_MOVE=move
 OBJ_MOVE=$(LIB_MOVE).o
@@ -54,8 +53,7 @@ CC=gcc
 MAKELIB=ar rv
 RANLIB=ranlib
 
-
-all: $(GUI) $(UTILITIES) $(CFG) $(LIST) $(ALGORITHMS) $(SCHEDULERS) $(MOVE) clean
+all: $(GUI) $(UTILITIES) $(CFG) $(LIST) $(SCHEDULERS) $(MOVE) clean
 
 $(GUI): $(OBJ_GUI)
 		$(MAKELIB) $(GUI) $(OBJ_GUI) && $(RANLIB) $(GUI)
@@ -81,13 +79,12 @@ $(LIST): $(OBJ_LIST)
 $(OBJ_LIST): $(SRC_LIST) $(INCLUDE_LIST)
 		$(CC) -c $(SRC_LIST) -I../include
 
-<<<<<<< HEAD
 $(MOVE): $(OBJ_MOVE)
 		$(MAKELIB) $(MOVE) $(OBJ_MOVE) && $(RANLIB) $(MOVE)
 
 $(OBJ_MOVE): $(SRC_MOVE) $(INCLUDE_MOVE)
 		$(CC) -c $(SRC_MOVE) -I../include
-=======
+
 $(ALGORITHMS): $(OBJ_ALGORITHMS)
 		$(MAKELIB) $(ALGORITHMS) $(OBJ_ALGORITHMS) && $(RANLIB) $(ALGORITHMS)
 
@@ -99,7 +96,6 @@ $(SCHEDULERS): $(OBJ_SCHEDULERS)
 
 $(OBJ_SCHEDULERS): $(SRC_SCHEDULERS) $(INCLUDE_SCHEDULERS)
 		$(CC) -c $(SRC_SCHEDULERS) -I../include
->>>>>>> 6aa3e5badd421ae1f0d99b6958e2f56c05e81667
 
 clean:
 		rm  *.o

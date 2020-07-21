@@ -19,19 +19,14 @@ const int Y_TILES = 24;
 
 int map[24][46];
 
-point positions[3];
+point routes_a[8][3];
+point routes_b[8][3];
+
+llist *aliens;
+
 int list_size = 0;
-
-// point actual_pos;
 int velocity = 0;
-
 int finish = 0;
-
-point routes_a[5][5];
-point routes_b[5][5];
-
-pthread_t threads[2];
-pthread_mutex_t lock;
 
 void *alien_thread(void *param);
 int spawn_alien(void);
@@ -67,6 +62,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  aliens = llist_create(NULL);
   load_alien(&velocity);
 
   /* Test Start*/
@@ -78,28 +74,6 @@ int main(int argc, char *argv[])
   else
   {
     printf("Manual Mode Selected\n");
-  }
-
-  // pthread_t thread1;
-  // int iret1;
-
-  // iret1 = pthread_create(&thread1, NULL, &alien_thread, NULL);
-  // if (iret1)
-  // {
-  //   fprintf(stderr, "Error - pthread_create() return code: %d\n", iret1);
-  //   exit(EXIT_FAILURE);
-  // }
-
-  /* Test End */
-
-  /* Alien Position Initialization */
-  // actual_pos.x = 1290;
-  // actual_pos.y = 390;
-
-  if (pthread_mutex_init(&lock, NULL) != 0)
-  {
-    printf("Mutex init has failed\n");
-    return 1;
   }
 
   init_routes(routes_a, routes_b);
@@ -138,8 +112,12 @@ int main(int argc, char *argv[])
   SDL_Rect img_rect;
   mouse_rect.w = mouse_rect.h = 1;
 
+  int aliens_size = 0;
+
   while (!quit)
   {
+    aliens_size = llist_get_size(aliens);
+
     while (SDL_PollEvent(&e))
     {
       if (e.type == SDL_QUIT)
@@ -153,7 +131,6 @@ int main(int argc, char *argv[])
         switch (e.key.keysym.sym)
         {
         case SDLK_a:
-          //spawn_alien(positions, &list_size);
           spawn_alien();
           break;
 
@@ -164,19 +141,26 @@ int main(int argc, char *argv[])
 
       if ((e.type == SDL_MOUSEBUTTONDOWN) & SDL_BUTTON(SDL_BUTTON_LEFT))
       {
-        SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
-        for (int i = 0; i < list_size; ++i)
+        if (aliens_size != 0)
         {
-          img_rect = get_texture_rect_wh(alien_a, positions[i].x, positions[i].y, 100, 100);
-          if (SDL_HasIntersection(&mouse_rect, &img_rect))
-          {
-            positions[i].x = 0;
-            positions[i].y = 0;
+          SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
 
-            list_size--;
+          for (int i = 0; i < aliens_size; ++i)
+          {
+            alien *curr = llist_get_by_index(aliens, i);
+
+            img_rect = get_texture_rect_wh(alien_a, curr->pos.x, curr->pos.y, 32, 32);
+
+            if (SDL_HasIntersection(&mouse_rect, &img_rect))
+            {
+              pthread_cancel(*(curr->thread));
+
+              llist_remove_by_index(aliens, i);
+              list_size--;
+              aliens_size--;
+            }
           }
         }
-        printf("MOUSE PRESSED\n");
       }
     }
 
@@ -206,12 +190,17 @@ int main(int argc, char *argv[])
     render_scale_texture(base_a, ren, 10, 200, 170, 170);
     render_scale_texture(base_b, ren, SCREEN_WIDTH - 180, 235, 170, 170);
 
-    //render_scale_texture(alien_a, ren, actual_pos.x, actual_pos.y, ALIEN_SIZE, ALIEN_SIZE);
+    render_scale_texture(alien_a, ren, 330, 120, ALIEN_SIZE, ALIEN_SIZE);
 
-    for (int i = 0; i < 3; ++i)
+    aliens_size = llist_get_size(aliens);
+
+    if (aliens_size != 0)
     {
-      if (positions[i].x != 0 && positions[i].y != 0)
-        render_scale_texture(alien_a, ren, positions[i].x, positions[i].y, ALIEN_SIZE, ALIEN_SIZE);
+      for (int i = 0; i < aliens_size; ++i)
+      {
+        alien *curr = llist_get_by_index(aliens, i);
+        render_scale_texture(alien_a, ren, curr->pos.x, curr->pos.y, ALIEN_SIZE, ALIEN_SIZE);
+      }
     }
 
     SDL_RenderPresent(ren);
@@ -225,29 +214,39 @@ int main(int argc, char *argv[])
 
   quit_graphics();
 
-  pthread_join(threads[0], NULL);
-  pthread_join(threads[1], NULL);
-  pthread_join(threads[2], NULL);
+  aliens_size = llist_get_size(aliens);
+
+  if (aliens_size != 0)
+  {
+    for (int i = 0; i < aliens_size; ++i)
+    {
+      alien *curr = llist_get_by_index(aliens, i);
+      pthread_join(*(curr->thread), NULL);
+    }
+  }
+
+  llist_free(aliens);
 
   return 0;
 }
 
 int spawn_alien(void)
 {
-  if (list_size > 2)
-  {
-    return -1;
-  }
-
   int iret1;
 
   int *arg = malloc(sizeof(*arg));
   *arg = list_size;
 
-  positions[list_size].x = 1290;
-  positions[list_size].y = 390;
+  alien *entity = (alien *)malloc(sizeof(alien));
+  pthread_t *thread = (pthread_t *)malloc(sizeof(pthread_t));
 
-  iret1 = pthread_create(&threads[list_size], NULL, &alien_thread, arg);
+  entity->pos.x = 1290;
+  entity->pos.y = 390;
+  entity->thread = thread;
+
+  llist_insert_by_index(aliens, entity, list_size);
+
+  iret1 = pthread_create(entity->thread, NULL, &alien_thread, arg);
 
   if (iret1)
   {
@@ -262,19 +261,32 @@ void *alien_thread(void *param)
 {
   int index = *((int *)param);
 
+  int hola = 3;
+
+  alien *my_alien = llist_get_by_index(aliens, index);
+
   for (int i = 0; i < 3; ++i)
   {
-    move(&positions[index], routes_b[0][i], velocity);
+    move(&my_alien->pos, routes_b[0][i], velocity);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&positions[index], routes_b[1][i], velocity);
+    move(&my_alien->pos, routes_b[hola][i], velocity);
+  }
+
+  printf("MOVE BRIDGE LOGIC\n");
+
+  move_bridge(&my_alien->pos, &my_alien->progress);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    move(&my_alien->pos, routes_b[hola + 3][i], velocity);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&positions[index], routes_b[4][i], velocity);
+    move(&my_alien->pos, routes_b[7][i], velocity);
   }
 
   free(param);
