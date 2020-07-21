@@ -3,6 +3,7 @@
 
 #include <sys/time.h>
 #include <pthread.h>
+#include <list.h>
 
 /* structs used for bridge variables */
 
@@ -32,5 +33,16 @@ typedef struct
   pthread_t *thread;
   int type;
 } alien;
+
+
+typedef struct
+{
+  llist *north;
+  llist *south;
+  llist *bridge;
+  int   amount_to_pass;
+  int   bridge_weight;
+  int  *weight_now;
+} algs_params;
 
 #endif
