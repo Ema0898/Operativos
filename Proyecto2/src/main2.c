@@ -59,10 +59,10 @@ int main(){
   params->south = aliens;
   params->bridge = bridge;
   params->amount_to_pass = 5;
-  params->bridge_weight = 100; 
+  params->bridge_weight = 20;
   params->weight_now = weight_now; 
   
-  Y_algorithm(params);
+  semaphore_algorithm(params);
 
   int bride_method = ROUND_ROBIN;
 
