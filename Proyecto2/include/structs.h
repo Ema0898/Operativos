@@ -2,7 +2,7 @@
 #define _STRUCTS_H
 
 #include <sys/time.h>
-#include <pthread.h>
+#include <lpthread.h>
 
 /* structs used for bridge variables */
 
@@ -29,7 +29,7 @@ typedef struct
   short working;
   int *lottery_numbers;
   point pos;
-  pthread_t *thread;
+  lpthread_t *thread;
   int type;
   float velocity;
 } alien;

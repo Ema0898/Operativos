@@ -1,14 +1,14 @@
-#ifndef LPTHREAD 
-#define LPTHREAD 
+#ifndef LPTHREAD
+#define LPTHREAD
 
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sched.h> /* For clone */
-#include <signal.h> /* For SIGCHLD */
+#include <sched.h>		 /* For clone */
+#include <signal.h>		 /* For SIGCHLD */
 #include <sys/types.h> /* For pid_t */
-#include <sys/wait.h> /* For wait */
-#include <unistd.h> /* For getpid */
+#include <sys/wait.h>	 /* For wait */
+#include <unistd.h>		 /* For getpid */
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
@@ -16,35 +16,39 @@
 #include <sys/syscall.h> // For call to gettid
 
 /* The maximum number of fibers that can be active at once. */
-#define MAX_FIBERS 10
+#define MAX_FIBERS 300
 /* The size of the stack for each fiber. */
-#define FIBER_STACK (1024*1024)
+#define FIBER_STACK (1024 * 1024)
 
-#define	LF_NOERROR	0
-#define	LF_MAXFIBERS	1
-#define LF_MALLOCERROR	2
-#define LF_CLONEERROR	3
-#define	LF_INFIBER	4
-#define LF_SIGNALERROR	5
+#define LF_NOERROR 0
+#define LF_MAXFIBERS 1
+#define LF_MALLOCERROR 2
+#define LF_CLONEERROR 3
+#define LF_INFIBER 4
+#define LF_SIGNALERROR 5
 
 /* The LPthread Structure
 *  Contains the information about individual lpthreads.
 */
-typedef struct{
-	pid_t pid; /* The pid of the child thread as returned by clone */
-	void* stack; /* The stack pointer */
+typedef struct
+{
+	pid_t pid;		 /* The pid of the child thread as returned by clone */
+	void *stack;	 /* The stack pointer */
 	char detached; // Detached or not
 } lpthread_t;
 
-typedef struct{
+typedef struct
+{
 	int id;
 } lpthread_attr_t;
 
-typedef struct{
+typedef struct
+{
 	char locked;
 	pid_t pid;
 } lpthread_mutex_t;
-typedef struct{
+typedef struct
+{
 	int id;
 } lpthread_mutexattr_t;
 
@@ -57,7 +61,7 @@ int (*start_routine)(void*): Pointer to routine to start
 void* arg: Argument for the routine
 */
 
-int Lthread_create(lpthread_t* thread, const lpthread_attr_t *attr, int (*start_routine)(void*), void* arg);
+int Lthread_create(lpthread_t *thread, const lpthread_attr_t *attr, int (*start_routine)(void *), void *arg);
 
 /*
 Lthread_exit: Kills a thread
@@ -93,7 +97,7 @@ lpthread_mutex_t* restrict mutex: Pointer to the structure
 const lpthread_mutexattr_t *restrict attr: Pointer to attribute 
 */
 
-int Lmutex_init(lpthread_mutex_t* restrict mutex, const lpthread_mutexattr_t *restrict attr);
+int Lmutex_init(lpthread_mutex_t *restrict mutex, const lpthread_mutexattr_t *restrict attr);
 
 /*
 Lmutex_destroy: Destroys a mutex strcuture
@@ -153,7 +157,7 @@ sync_printf: Printf blocked with lpthread mutex
 char* format: Format for the string
 */
 
-void sync_printf(char* format,...);
+void sync_printf(char *format, ...);
 
 /*
 convert: Converts number to a base 
@@ -161,7 +165,6 @@ unsigned int num: number input
 int base: base input
 */
 
-
-char* convert(unsigned int num, int base);
+char *convert(unsigned int num, int base);
 
 #endif

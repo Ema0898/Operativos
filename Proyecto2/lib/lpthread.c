@@ -35,7 +35,7 @@ int Lthread_create(lpthread_t *thread, const lpthread_attr_t *attr, int (*start_
 													CLONE_FILES |
 													CLONE_SIGHAND |
 													CLONE_VM |
-													CLONE_PARENT_SETTID |
+													//CLONE_PARENT_SETTID |
 													CLONE_CHILD_CLEARTID |
 													CLONE_PTRACE,
 											arg);

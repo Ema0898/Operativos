@@ -1,5 +1,5 @@
 #include <SDL2/SDL.h>
-#include <pthread.h>
+#include <lpthread.h>
 #include <unistd.h>
 #include <math.h>
 #include <stdlib.h>
@@ -32,13 +32,19 @@ int list_b_size = 0;
 int velocity = 0;
 int finish = 0;
 
-void *alien_a_thread(void *param);
-void *alien_b_thread(void *param);
-int spawn_alien(int community);
+int percentages[6];
+
+int alien_a_thread(void *param);
+int alien_b_thread(void *param);
+int automatic_mode_thread(void *param);
+
+int spawn_alien(int community, int type);
 
 int main(int argc, char *argv[])
 {
   int medium = 0;
+  int manual = 0;
+
   if (!valdite_args(argc, argv, &medium))
   {
     return 1;
@@ -72,17 +78,24 @@ int main(int argc, char *argv[])
   aliens_a = llist_create(NULL);
   aliens_b = llist_create(NULL);
 
-  load_alien(&velocity);
+  memset(percentages, 0, 6);
+  load_alien(&velocity, percentages);
 
-  /* Test Start*/
+  lpthread_t automatic_mode;
+
   if (medium != 0)
   {
     printf("Automatic Mode Selected\n");
-    printf("%d\n", medium);
+
+    double *arg = malloc(sizeof(*arg));
+    *arg = (float)medium / 100;
+
+    Lthread_create(&automatic_mode, NULL, &automatic_mode_thread, arg);
   }
   else
   {
     printf("Manual Mode Selected\n");
+    manual = 1;
   }
 
   init_routes(routes_a, routes_b);
@@ -143,16 +156,32 @@ int main(int argc, char *argv[])
         finish = 1;
       }
 
-      if (e.type == SDL_KEYDOWN)
+      if (e.type == SDL_KEYDOWN && manual)
       {
         switch (e.key.keysym.sym)
         {
         case SDLK_a:
-          spawn_alien(0);
+          spawn_alien(0, 0);
+          break;
+
+        case SDLK_s:
+          spawn_alien(0, 1);
+          break;
+
+        case SDLK_d:
+          spawn_alien(0, 2);
           break;
 
         case SDLK_b:
-          spawn_alien(1);
+          spawn_alien(1, 0);
+          break;
+
+        case SDLK_n:
+          spawn_alien(1, 1);
+          break;
+
+        case SDLK_m:
+          spawn_alien(1, 2);
           break;
 
         default:
@@ -174,7 +203,8 @@ int main(int argc, char *argv[])
 
             if (SDL_HasIntersection(&mouse_rect, &img_rect))
             {
-              pthread_cancel(*(curr->thread));
+              lpthread_t *thread = curr->thread;
+              Lthread_exit(thread->pid);
 
               llist_remove_by_index(aliens_a, i);
               list_a_size--;
@@ -195,7 +225,8 @@ int main(int argc, char *argv[])
 
             if (SDL_HasIntersection(&mouse_rect, &img_rect))
             {
-              pthread_cancel(*(curr->thread));
+              lpthread_t *thread = curr->thread;
+              Lthread_exit(thread->pid);
 
               llist_remove_by_index(aliens_b, i);
               list_b_size--;
@@ -299,13 +330,14 @@ int main(int argc, char *argv[])
   SDL_DestroyWindow(win);
 
   quit_graphics();
+  quit_cfg();
 
   if (aliens_a_size != 0)
   {
     for (int i = 0; i < aliens_a_size; ++i)
     {
       alien *curr = llist_get_by_index(aliens_a, i);
-      pthread_join(*(curr->thread), NULL);
+      Lthread_join(*(curr->thread), NULL);
     }
   }
 
@@ -314,9 +346,11 @@ int main(int argc, char *argv[])
     for (int i = 0; i < aliens_b_size; ++i)
     {
       alien *curr = llist_get_by_index(aliens_b, i);
-      pthread_join(*(curr->thread), NULL);
+      Lthread_join(*(curr->thread), NULL);
     }
   }
+
+  Lthread_join(automatic_mode, NULL);
 
   llist_free(aliens_a);
   llist_free(aliens_b);
@@ -324,16 +358,16 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-int spawn_alien(int community)
+int spawn_alien(int community, int type)
 {
   int iret1;
 
   int *arg = malloc(sizeof(*arg));
 
   alien *entity = (alien *)malloc(sizeof(alien));
-  pthread_t *thread = (pthread_t *)malloc(sizeof(pthread_t));
+  lpthread_t *thread = (lpthread_t *)malloc(sizeof(lpthread_t));
   entity->thread = thread;
-  entity->type = generate_random(2, 0);
+  entity->type = type;
 
   int percentage = (rand() % (200 - 50 + 1)) + 50;
   entity->velocity = generate_alien_velocity(entity->type, velocity, percentage);
@@ -347,7 +381,7 @@ int spawn_alien(int community)
 
     llist_insert_by_index(aliens_a, entity, list_a_size);
 
-    iret1 = pthread_create(entity->thread, NULL, &alien_a_thread, arg);
+    iret1 = Lthread_create(entity->thread, NULL, &alien_a_thread, arg);
 
     list_a_size++;
   }
@@ -360,7 +394,7 @@ int spawn_alien(int community)
 
     llist_insert_by_index(aliens_b, entity, list_b_size);
 
-    iret1 = pthread_create(entity->thread, NULL, &alien_b_thread, arg);
+    iret1 = Lthread_create(entity->thread, NULL, &alien_b_thread, arg);
 
     list_b_size++;
   }
@@ -374,7 +408,7 @@ int spawn_alien(int community)
   return 0;
 }
 
-void *alien_a_thread(void *param)
+int alien_a_thread(void *param)
 {
   int index = *((int *)param);
 
@@ -404,12 +438,17 @@ void *alien_a_thread(void *param)
     move(&my_alien->pos, routes_a[7][i], my_alien->velocity);
   }
 
-  free(param);
+  //free(param);
+
+  llist_remove_by_index(aliens_a, index);
+  list_a_size--;
 
   printf("Thread end\n");
+
+  return 0;
 }
 
-void *alien_b_thread(void *param)
+int alien_b_thread(void *param)
 {
   int index = *((int *)param);
 
@@ -441,7 +480,47 @@ void *alien_b_thread(void *param)
     move(&my_alien->pos, routes_b[7][i], my_alien->velocity);
   }
 
-  free(param);
+  //free(param);
+
+  llist_remove_by_index(aliens_b, index);
+  list_b_size--;
 
   printf("Thread end\n");
+
+  return 0;
+}
+
+int automatic_mode_thread(void *param)
+{
+  double lambda = *((double *)param);
+  double wait = ran_expo(lambda);
+
+  int a_probability[10];
+  int b_probability[10];
+
+  for (int i = 0; i < 10; ++i)
+  {
+    a_probability[i] = 0;
+    b_probability[i] = 0;
+  }
+
+  printf("AUTOMATIC THREAD WAITING TIME = %f\n", wait);
+
+  generate_probability(a_probability, b_probability, percentages);
+
+  while (!finish)
+  {
+    int index_a = generate_random(9, 0);
+    int index_b = generate_random(9, 0);
+
+    printf("SPAWNED A ALIEN, TYPE = %d\n", a_probability[index_a]);
+    printf("SPAWNED B ALIEN, TYPE = %d\n", b_probability[index_b]);
+
+    spawn_alien(0, a_probability[index_a]);
+    spawn_alien(1, b_probability[index_b]);
+
+    sleep(wait);
+  }
+
+  return 0;
 }

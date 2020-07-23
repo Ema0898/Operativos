@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 int load_map(int map[24][46])
 {
@@ -200,4 +201,47 @@ int valdite_args(int argc, char *argv[], int *medium)
 int generate_random(int upper, int lower)
 {
   return (rand() % (upper - lower + 1)) + lower;
+}
+
+/* Exponential Distribution */
+double ran_expo(double lambda)
+{
+  double u;
+  u = rand() / (RAND_MAX + 1.0);
+  return -log(1 - u) / lambda;
+}
+
+void generate_probability(int *a_probability, int *b_probability, int *percentages)
+{
+  int a_alpha = percentages[1];
+  int a_beta = percentages[2];
+
+  int b_alpha = percentages[4];
+  int b_beta = percentages[5];
+
+  if ((a_alpha + a_beta) <= 10)
+  {
+    for (int i = 0; i < a_alpha; ++i)
+    {
+      a_probability[i] = 1;
+    }
+
+    for (int i = a_alpha; i < (a_alpha + a_beta); ++i)
+    {
+      a_probability[i] = 2;
+    }
+  }
+
+  if ((b_alpha + b_beta) <= 10)
+  {
+    for (int i = 0; i < b_alpha; ++i)
+    {
+      b_probability[i] = 1;
+    }
+
+    for (int i = b_alpha; i < (b_alpha + b_beta); ++i)
+    {
+      b_probability[i] = 2;
+    }
+  }
 }

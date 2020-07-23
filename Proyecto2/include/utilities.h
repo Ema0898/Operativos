@@ -8,5 +8,7 @@ char *concat(const char *s1, const char *s2);
 int valdite_args(int argc, char *argv[], int *medium);
 int is_number(char *text);
 int generate_random(int upper, int lower);
+double ran_expo(double lambda);
+void generate_probability(int *a_probability, int *b_probability, int *percentages);
 
 #endif

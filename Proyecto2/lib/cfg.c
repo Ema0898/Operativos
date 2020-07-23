@@ -39,9 +39,17 @@ void load_bridge(bridge *a)
   config_lookup_int(cf, "length", &a->length);
 }
 
-void load_alien(int *velocity)
+void load_alien(int *velocity, int *percentages)
 {
   config_lookup_int(cf, "velocity", velocity);
+
+  config_lookup_int(cf, "alien_a_base", &percentages[0]);
+  config_lookup_int(cf, "alien_a_alpha", &percentages[1]);
+  config_lookup_int(cf, "alien_a_beta", &percentages[2]);
+
+  config_lookup_int(cf, "alien_b_base", &percentages[3]);
+  config_lookup_int(cf, "alien_b_alpha", &percentages[4]);
+  config_lookup_int(cf, "alien_b_beta", &percentages[5]);
 }
 
 void quit_cfg(void)
