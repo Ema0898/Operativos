@@ -1,3 +1,9 @@
+sudo apt-get install -y libfreetype6
+sudo apt-get install -y freetype2-demos
+sudo apt-get install -y libfreetype6-dev
+
+echo "LIBFREETYPE2 INSTALLED";
+
 sudo apt-get install libconfig-dev
 
 echo "LIBCONFIG INSTALLED";
