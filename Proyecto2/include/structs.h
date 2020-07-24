@@ -6,10 +6,10 @@
 #include <list.h>
 
 #define ROUND_ROBIN 0
-#define PRIORITY    1
-#define FIFO        2
-#define SJF         3
-#define LOTTERY     4
+#define PRIORITY 1
+#define FIFO 2
+#define SJF 3
+#define LOTTERY 4
 
 /* structs used for bridge variables */
 
@@ -50,11 +50,11 @@ typedef struct
   llist *north;
   llist *south;
   llist *bridge;
-  int   amount_to_pass;
-  int   bridge_weight;
-  int  *weight_now;
-  int   turn;
-  bridge* bridge_struct;
+  int amount_to_pass;
+  int bridge_weight;
+  int *weight_now;
+  int turn;
+  bridge *bridge_struct;
 } algs_params;
 
 #endif

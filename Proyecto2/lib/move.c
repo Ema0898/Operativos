@@ -5,6 +5,7 @@
 #include <list.h>
 #include <SDL2/SDL.h>
 #include <lpthread.h>
+#include <utilities.h>
 
 int stop_move(point *actual, point dest, float dist_x, float dist_y)
 {
@@ -134,6 +135,35 @@ void move_bridge(point *actual, float *progress, int direcction)
 
     usleep(16666);
   }
+}
+
+void move_invader(point *actual, point dest, float velocity)
+{
+  float dist_x = dest.x - actual->x;
+  float dist_y = dest.y - actual->y;
+
+  float norm = sqrt(pow(dist_x, 2) + pow(dist_y, 2));
+
+  dist_x /= norm;
+  dist_y /= norm;
+
+  int moving = 1;
+
+  while (moving)
+  {
+    actual->x += dist_x * velocity;
+    actual->y += dist_y * velocity;
+
+    if (stop_move(actual, dest, dist_x, dist_y))
+    {
+      moving = 0;
+    }
+
+    usleep(16666 * 2);
+  }
+
+  actual->x = ceil(actual->x);
+  actual->y = ceil(actual->y);
 }
 
 float generate_alien_velocity(int type, int base_velocity, int percentage)

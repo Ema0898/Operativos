@@ -2,19 +2,23 @@
 #include <structs.h>
 
 config_t cfg, *cf;
+config_t cfg1, *cf1;
 
 int init_cfg(void)
 {
   cf = &cfg;
-  config_init(cf);
+  cf1 = &cfg1;
 
-  if (!config_read_file(cf, "../config/bridge.cfg"))
+  config_init(cf);
+  config_init(cf1);
+
+  if (!config_read_file(cf1, "../config/right_bridge.cfg"))
   {
     fprintf(stderr, "%s:%d - %s\n",
-            config_error_file(cf),
-            config_error_line(cf),
-            config_error_text(cf));
-    config_destroy(cf);
+            config_error_file(cf1),
+            config_error_line(cf1),
+            config_error_text(cf1));
+    config_destroy(cf1);
     printf("Can't read bridge configuration file\n");
     return 0;
   }
@@ -35,8 +39,10 @@ int init_cfg(void)
 
 void load_bridge(bridge *a)
 {
-  config_lookup_int(cf, "weight", &a->weight);
-  config_lookup_int(cf, "length", &a->length);
+  config_lookup_int(cf1, "weight", &a->weight);
+  config_lookup_int(cf1, "length", &a->length);
+  config_lookup_int(cf1, "quantum", &a->quantum);
+  config_lookup_int(cf1, "scheduler", &a->bridge_type);
 }
 
 void load_alien(int *velocity, int *percentages)
@@ -55,4 +61,5 @@ void load_alien(int *velocity, int *percentages)
 void quit_cfg(void)
 {
   config_destroy(cf);
+  config_destroy(cf1);
 }

@@ -29,28 +29,28 @@ point routes_b[8][3];
 llist *aliens_a;
 llist *aliens_b;
 
-bridge* bridge_struct_left;
-bridge* bridge_struct_right;
-bridge* bridge_struct_center;
+bridge *bridge_struct_left;
+bridge *bridge_struct_right;
+bridge *bridge_struct_center;
 
 llist *list_bridge_left;
 llist *list_bridge_right;
 llist *list_bridge_center;
 
-llist* aliens_left_north;
-llist* aliens_left_south;
-llist* aliens_right_north;
-llist* aliens_right_south;
-llist* aliens_center_north;
-llist* aliens_center_south;
+llist *aliens_left_north;
+llist *aliens_left_south;
+llist *aliens_right_north;
+llist *aliens_right_south;
+llist *aliens_center_north;
+llist *aliens_center_south;
 
-algs_params* params_left;
-algs_params* params_right;
-algs_params* params_center;
+algs_params *params_left;
+algs_params *params_right;
+algs_params *params_center;
 
 int *weight_now_left;
-int *weight_now_right; 
-int *weight_now_center; 
+int *weight_now_right;
+int *weight_now_center;
 
 alien *invader;
 int invader_alive;
@@ -65,13 +65,15 @@ int percentages[6];
 // lpthread_mutex_t lock_a;
 // lpthread_mutex_t lock_b;
 
+lpthread_t invader_thread_id;
+
 int alien_a_thread(void *param);
 int alien_b_thread(void *param);
 int automatic_mode_thread(void *param);
+int invader_thread(void *param);
 
 int spawn_alien(int community, int type);
 int spawn_invader(void);
-
 
 int main(int argc, char *argv[])
 {
@@ -126,27 +128,37 @@ int main(int argc, char *argv[])
   list_bridge_left = llist_create(NULL);
   list_bridge_right = llist_create(NULL);
   list_bridge_center = llist_create(NULL);
-  
+
   aliens_left_north = llist_create(NULL);
   aliens_left_south = llist_create(NULL);
   aliens_right_north = llist_create(NULL);
   aliens_right_south = llist_create(NULL);
   aliens_center_north = llist_create(NULL);
   aliens_center_south = llist_create(NULL);
-  
-  bridge_struct_left = (bridge*)malloc(sizeof(bridge));;
-  bridge_struct_right = (bridge*)malloc(sizeof(bridge));;
-  bridge_struct_center = (bridge*)malloc(sizeof(bridge));;
+
+  bridge_struct_left = (bridge *)malloc(sizeof(bridge));
+
+  bridge_struct_right = (bridge *)malloc(sizeof(bridge));
+
+  bridge_struct_center = (bridge *)malloc(sizeof(bridge));
+
+  bridge *test = (bridge *)malloc(sizeof(bridge));
+  load_bridge(test);
+
+  printf("WEIGHT = %d\n", test->weight);
+  printf("LENGTH = %d\n", test->length);
+  printf("QUANTUM = %d\n", test->quantum);
+  printf("TYPE = %d\n", test->bridge_type);
 
   bridge_struct_left->weight = 20;
   bridge_struct_left->length = 50;
   bridge_struct_left->bridge_type = ROUND_ROBIN;
   bridge_struct_left->quantum = 30;
 
-  weight_now_left = (int*)malloc(sizeof(int));
+  weight_now_left = (int *)malloc(sizeof(int));
   *weight_now_left = 0;
 
-  params_left = (algs_params*)malloc(sizeof(algs_params));
+  params_left = (algs_params *)malloc(sizeof(algs_params));
   params_left->north = aliens_left_north;
   params_left->south = aliens_left_south;
   params_left->bridge = list_bridge_left;
@@ -335,7 +347,7 @@ int main(int argc, char *argv[])
 
         if (invader_alive)
         {
-          img_rect = get_texture_rect_wh(invader_img, 690, 530, 32, 32);
+          img_rect = get_texture_rect_wh(invader_img, invader->pos.x, invader->pos.y, 32, 32);
 
           if (SDL_HasIntersection(&mouse_rect, &img_rect))
           {
@@ -463,6 +475,29 @@ int main(int argc, char *argv[])
   aliens_a_size = llist_get_size(aliens_a);
   aliens_b_size = llist_get_size(aliens_b);
 
+  /* Free Memory */
+  llist_free(list_bridge_left);
+  llist_free(list_bridge_center);
+  llist_free(list_bridge_right);
+
+  llist_free(aliens_left_north);
+  llist_free(aliens_left_south);
+  llist_free(aliens_right_north);
+  llist_free(aliens_right_south);
+  llist_free(aliens_center_north);
+  llist_free(aliens_center_south);
+
+  free(bridge_struct_left);
+  free(bridge_struct_right);
+  free(bridge_struct_center);
+
+  free(test);
+
+  free(weight_now_left);
+
+  free(params_left);
+
+  /* JOIN THREADS */
   if (aliens_a_size != 0)
   {
     for (int i = 0; i < aliens_a_size; ++i)
@@ -478,6 +513,8 @@ int main(int argc, char *argv[])
     }
   }
 
+  printf("ALIENS A JOINED\n");
+
   if (aliens_b_size != 0)
   {
     for (int i = 0; i < aliens_b_size; ++i)
@@ -492,6 +529,8 @@ int main(int argc, char *argv[])
       printf("THREAD FOR ALIEN B INDEX %d JOINED\n", i);
     }
   }
+
+  printf("ALIENS B JOINED\n");
 
   Lthread_join(automatic_mode, NULL);
 
@@ -509,7 +548,7 @@ int spawn_alien(int community, int type)
 
   alien *entity = (alien *)malloc(sizeof(alien));
   lpthread_t *thread = (lpthread_t *)malloc(sizeof(lpthread_t));
-  
+
   entity->thread = thread;
   entity->type = type;
   gettimeofday(&entity->work_init_time, NULL);
@@ -519,7 +558,7 @@ int spawn_alien(int community, int type)
   entity->working = 0;
   entity->accumulator = 0;
   entity->priority = 0;
-  entity->weight =  15;
+  entity->weight = 15;
 
   int percentage = (rand() % (200 - 50 + 1)) + 50;
   entity->velocity = generate_alien_velocity(entity->type, velocity, percentage);
@@ -566,8 +605,8 @@ int spawn_invader(void)
   {
     invader_alive = 1;
     invader = (alien *)malloc(sizeof(alien));
-    invader->pos.x = 690;
-    invader->pos.y = 530;
+
+    Lthread_create(&invader_thread_id, NULL, &invader_thread, NULL);
   }
 }
 
@@ -591,7 +630,7 @@ int alien_a_thread(void *param)
   }
 
   /* PARTE ROSADA */
-  FIFO_scheduler(aliens_left_north, (void*)my_alien);
+  FIFO_scheduler(aliens_left_north, (void *)my_alien);
 
   for (int i = 0; i < 3; ++i)
   {
@@ -712,4 +751,42 @@ int automatic_mode_thread(void *param)
   }
 
   return 0;
+}
+
+int invader_thread(void *param)
+{
+  int a_b = generate_random(1, 0);
+  point route[8][3];
+
+  if (a_b == 0)
+  {
+    memcpy(route, routes_a, sizeof(route));
+    invader->pos.x = 630;
+    invader->pos.y = 120;
+  }
+  else
+  {
+    memcpy(route, routes_b, sizeof(route));
+    invader->pos.x = 630;
+    invader->pos.y = 530;
+  }
+
+  int rand_route = generate_random(3, 1);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    move_invader(&invader->pos, route[rand_route][i], velocity * 2);
+  }
+
+  for (int i = 0; i < 3; ++i)
+  {
+    move_invader(&invader->pos, route[rand_route + 3][i], velocity * 2);
+  }
+
+  for (int i = 0; i < 3; ++i)
+  {
+    move_invader(&invader->pos, route[7][i], velocity * 2);
+  }
+
+  invader_alive = 0;
 }
