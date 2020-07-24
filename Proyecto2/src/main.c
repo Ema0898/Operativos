@@ -34,6 +34,9 @@ int finish = 0;
 
 int percentages[6];
 
+lpthread_mutex_t lock_a;
+lpthread_mutex_t lock_b;
+
 int alien_a_thread(void *param);
 int alien_b_thread(void *param);
 int automatic_mode_thread(void *param);
@@ -70,6 +73,18 @@ int main(int argc, char *argv[])
   if (!init_cfg())
   {
     printf("Can't read configuration file\n");
+    return 1;
+  }
+
+  if (Lmutex_init(&lock_a, NULL) != 0)
+  {
+    printf("\n Mutex for aliens A init has failed\n");
+    return 1;
+  }
+
+  if (Lmutex_init(&lock_b, NULL) != 0)
+  {
+    printf("\n Mutex for aliens B init has failed\n");
     return 1;
   }
 
@@ -263,6 +278,8 @@ int main(int argc, char *argv[])
     render_scale_texture(base_a, ren, 10, 200, 170, 170);
     render_scale_texture(base_b, ren, SCREEN_WIDTH - 180, 235, 170, 170);
 
+    aliens_a_size = llist_get_size(aliens_a);
+
     if (aliens_a_size != 0)
     {
       for (int i = 0; i < aliens_a_size; ++i)
@@ -287,6 +304,8 @@ int main(int argc, char *argv[])
         }
       }
     }
+
+    aliens_b_size = llist_get_size(aliens_b);
 
     if (aliens_b_size != 0)
     {
@@ -315,7 +334,7 @@ int main(int argc, char *argv[])
 
     SDL_RenderPresent(ren);
 
-    SDL_Delay(16.666667);
+    SDL_Delay(16.666667 * 2);
   }
 
   SDL_DestroyTexture(alien_a);
@@ -331,6 +350,9 @@ int main(int argc, char *argv[])
 
   quit_graphics();
   quit_cfg();
+
+  aliens_a_size = llist_get_size(aliens_a);
+  aliens_b_size = llist_get_size(aliens_b);
 
   if (aliens_a_size != 0)
   {
@@ -414,33 +436,42 @@ int alien_a_thread(void *param)
 
   int hola = generate_random(3, 1);
 
+  printf("ANTES GET ALIEN\n");
   alien *my_alien = llist_get_by_index(aliens_a, index);
+  printf("DESPUES GET ALIEN\n");
+
+  int id = my_alien->thread->pid;
+  my_alien->id = id;
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[0][i], my_alien->velocity);
+    move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[hola][i], my_alien->velocity);
+    move(&my_alien->pos, routes_a[hola][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
   }
 
   move_bridge(&my_alien->pos, &my_alien->progress, 1);
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[hola + 3][i], my_alien->velocity);
+    move(&my_alien->pos, routes_a[hola + 3][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[7][i], my_alien->velocity);
+    move(&my_alien->pos, routes_a[7][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
   }
 
   //free(param);
 
-  llist_remove_by_index(aliens_a, index);
+  int curr_index = llist_get_alien_index(aliens_a, my_alien->id);
+
+  printf("CURR INDEX = %d\n", curr_index);
+
+  llist_remove_by_index(aliens_a, curr_index);
   list_a_size--;
 
   printf("Thread end\n");
@@ -454,35 +485,42 @@ int alien_b_thread(void *param)
 
   int hola = generate_random(3, 1);
 
+  printf("ANTES GET ALIEN\n");
   alien *my_alien = llist_get_by_index(aliens_b, index);
+  printf("DESPUES GET ALIEN\n");
+
+  int id = my_alien->thread->pid;
+  my_alien->id = id;
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[0][i], my_alien->velocity);
+    move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[hola][i], my_alien->velocity);
+    move(&my_alien->pos, routes_b[hola][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
   }
-
-  printf("MOVE BRIDGE LOGIC\n");
 
   move_bridge(&my_alien->pos, &my_alien->progress, -1);
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[hola + 3][i], my_alien->velocity);
+    move(&my_alien->pos, routes_b[hola + 3][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[7][i], my_alien->velocity);
+    move(&my_alien->pos, routes_b[7][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
   }
 
   //free(param);
 
-  llist_remove_by_index(aliens_b, index);
+  int curr_index = llist_get_alien_index(aliens_b, my_alien->id);
+
+  printf("CURR INDEX = %d\n", curr_index);
+
+  llist_remove_by_index(aliens_b, curr_index);
   list_b_size--;
 
   printf("Thread end\n");

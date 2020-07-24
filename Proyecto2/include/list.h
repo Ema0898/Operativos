@@ -41,4 +41,6 @@ int llist_remove_by_index(llist *list, int Id);
 
 void *llist_get_winner(llist *list, int winner);
 
+int llist_get_alien_index(llist *list, int id);
+
 #endif

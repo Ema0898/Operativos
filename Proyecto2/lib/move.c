@@ -2,6 +2,9 @@
 #include <structs.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <list.h>
+#include <SDL2/SDL.h>
+#include <lpthread.h>
 
 int stop_move(point *actual, point dest, float dist_x, float dist_y)
 {
@@ -24,7 +27,7 @@ int stop_move(point *actual, point dest, float dist_x, float dist_y)
   return cond_x && cond_y;
 }
 
-void move(point *actual, point dest, float velocity)
+void move(point *actual, point dest, float velocity, llist *list, int index, lpthread_mutex_t *lock)
 {
   float dist_x = dest.x - actual->x;
   float dist_y = dest.y - actual->y;
@@ -36,17 +39,69 @@ void move(point *actual, point dest, float velocity)
 
   int moving = 1;
 
+  float tmp_x, tmp_y;
+
+  SDL_Rect myself, other;
+
+  myself.h = 30;
+  myself.w = 30,
+
+  other.h = 30;
+  other.w = 30;
+
+  int intersection = 0;
+  int size = 0;
+
   while (moving)
   {
-    actual->x += dist_x * velocity;
-    actual->y += dist_y * velocity;
+    tmp_x = actual->x + dist_x * velocity;
+    tmp_y = actual->y + dist_y * velocity;
+
+    myself.x = tmp_x;
+    myself.y = tmp_y;
+
+    //Lmutex_lock(lock);
+    size = llist_get_size(list);
+    //Lmutex_unlock(lock);
+
+    for (int i = 0; i < size; ++i)
+    {
+      printf("ANTES MOVE LIST\n");
+      //Lmutex_lock(lock);
+      alien *curr = llist_get_by_index(list, i);
+      //Lmutex_unlock(lock);
+      printf("DESPUES MOVE LIST\n");
+
+      if (index != curr->id)
+      {
+        other.x = curr->pos.x;
+        other.y = curr->pos.y;
+
+        if (SDL_HasIntersection(&myself, &other))
+        {
+          intersection = 1;
+        }
+      }
+
+      //Lmutex_lock(lock);
+      size = llist_get_size(list);
+      //Lmutex_unlock(lock);
+    }
+
+    if (!intersection)
+    {
+      actual->x += dist_x * velocity;
+      actual->y += dist_y * velocity;
+    }
+
+    intersection = 0;
 
     if (stop_move(actual, dest, dist_x, dist_y))
     {
       moving = 0;
     }
 
-    usleep(16666);
+    usleep(16666 * 2);
   }
 
   actual->x = ceil(actual->x);

@@ -32,6 +32,7 @@ typedef struct
   lpthread_t *thread;
   int type;
   float velocity;
+  int id;
 } alien;
 
 #endif

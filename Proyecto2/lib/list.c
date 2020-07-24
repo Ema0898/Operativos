@@ -286,3 +286,25 @@ void *llist_get_winner(llist *list, int winner)
 
   return NULL;
 }
+
+int llist_get_alien_index(llist *list, int id)
+{
+  struct node *curr = *list;
+  alien *thisAlien;
+
+  int counter = 0;
+  while (curr != NULL)
+  {
+    thisAlien = (alien *)curr->data;
+
+    if (thisAlien->id == id)
+    {
+      return counter;
+    }
+
+    counter++;
+    curr = curr->next;
+  }
+
+  return -1;
+}
