@@ -3,6 +3,7 @@
 
 #include <sys/time.h>
 #include <lpthread.h>
+#include <list.h>
 
 /* structs used for bridge variables */
 
@@ -28,11 +29,22 @@ typedef struct
   float accumulator;
   short working;
   int *lottery_numbers;
+  int weight;
   point pos;
   lpthread_t *thread;
   int type;
   float velocity;
   int id;
 } alien;
+
+typedef struct
+{
+  llist *north;
+  llist *south;
+  llist *bridge;
+  int   amount_to_pass;
+  int   bridge_weight;
+  int  *weight_now;
+} algs_params;
 
 #endif

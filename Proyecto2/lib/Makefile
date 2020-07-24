@@ -60,7 +60,7 @@ CC=gcc
 MAKELIB=ar rv
 RANLIB=ranlib
 
-all: $(GUI) $(UTILITIES) $(CFG) $(LIST) $(SCHEDULERS) $(MOVE) $(LTHREADS) clean
+all: $(GUI) $(UTILITIES) $(CFG) $(LIST) $(SCHEDULERS) $(ALGORITHMS) $(MOVE) $(LTHREADS) clean
 
 $(GUI): $(OBJ_GUI)
 		$(MAKELIB) $(GUI) $(OBJ_GUI) && $(RANLIB) $(GUI)
