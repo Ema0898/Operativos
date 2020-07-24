@@ -70,9 +70,4 @@ int main(){
   
   semaphore_algorithm(params);
 
-  int bride_method = ROUND_ROBIN;
-
-  if(bride_method == ROUND_ROBIN){
-    
-  }
 }

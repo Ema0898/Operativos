@@ -131,7 +131,6 @@ void move_bridge(point *actual, float *progress, int direcction)
   while (*progress < 1)
   {
     actual->y = (bridge_height * (*progress)) * direcction + init_pos_y;
-    *progress = *progress + 0.01;
 
     usleep(16666);
   }

@@ -10,6 +10,8 @@
 #include <cfg.h>
 #include <list.h>
 #include <move.h>
+#include <algorithms.h>
+#include <schedulers.h>
 
 const int SCREEN_WIDTH = 1366;
 const int SCREEN_HEIGHT = 720;
@@ -26,6 +28,29 @@ point routes_b[8][3];
 
 llist *aliens_a;
 llist *aliens_b;
+
+bridge* bridge_struct_left;
+bridge* bridge_struct_right;
+bridge* bridge_struct_center;
+
+llist *list_bridge_left;
+llist *list_bridge_right;
+llist *list_bridge_center;
+
+llist* aliens_left_north;
+llist* aliens_left_south;
+llist* aliens_right_north;
+llist* aliens_right_south;
+llist* aliens_center_north;
+llist* aliens_center_south;
+
+algs_params* params_left;
+algs_params* params_right;
+algs_params* params_center;
+
+int *weight_now_left;
+int *weight_now_right; 
+int *weight_now_center; 
 
 alien *invader;
 int invader_alive;
@@ -46,6 +71,7 @@ int automatic_mode_thread(void *param);
 
 int spawn_alien(int community, int type);
 int spawn_invader(void);
+
 
 int main(int argc, char *argv[])
 {
@@ -96,6 +122,42 @@ int main(int argc, char *argv[])
 
   aliens_a = llist_create(NULL);
   aliens_b = llist_create(NULL);
+
+  list_bridge_left = llist_create(NULL);
+  list_bridge_right = llist_create(NULL);
+  list_bridge_center = llist_create(NULL);
+  
+  aliens_left_north = llist_create(NULL);
+  aliens_left_south = llist_create(NULL);
+  aliens_right_north = llist_create(NULL);
+  aliens_right_south = llist_create(NULL);
+  aliens_center_north = llist_create(NULL);
+  aliens_center_south = llist_create(NULL);
+  
+  bridge_struct_left = (bridge*)malloc(sizeof(bridge));;
+  bridge_struct_right = (bridge*)malloc(sizeof(bridge));;
+  bridge_struct_center = (bridge*)malloc(sizeof(bridge));;
+
+  bridge_struct_left->weight = 20;
+  bridge_struct_left->length = 50;
+  bridge_struct_left->bridge_type = ROUND_ROBIN;
+  bridge_struct_left->quantum = 30;
+
+  weight_now_left = (int*)malloc(sizeof(int));
+  *weight_now_left = 0;
+
+  params_left = (algs_params*)malloc(sizeof(algs_params));
+  params_left->north = aliens_left_north;
+  params_left->south = aliens_left_south;
+  params_left->bridge = list_bridge_left;
+  params_left->amount_to_pass = 5;
+  params_left->bridge_weight = 50;
+  params_left->weight_now = weight_now_left;
+  params_left->bridge_struct = bridge_struct_left;
+
+  lpthread_t algorithms;
+
+  Lthread_create(&algorithms, NULL, &semaphore_algorithm, params_left);
 
   invader_alive = 0;
 
@@ -447,8 +509,17 @@ int spawn_alien(int community, int type)
 
   alien *entity = (alien *)malloc(sizeof(alien));
   lpthread_t *thread = (lpthread_t *)malloc(sizeof(lpthread_t));
+  
   entity->thread = thread;
   entity->type = type;
+  gettimeofday(&entity->work_init_time, NULL);
+  entity->last_update = entity->work_init_time;
+  entity->progress = 0;
+  entity->duration = 10;
+  entity->working = 0;
+  entity->accumulator = 0;
+  entity->priority = 0;
+  entity->weight =  15;
 
   int percentage = (rand() % (200 - 50 + 1)) + 50;
   entity->velocity = generate_alien_velocity(entity->type, velocity, percentage);
@@ -504,7 +575,8 @@ int alien_a_thread(void *param)
 {
   int index = *((int *)param);
 
-  int hola = generate_random(3, 1);
+  //int hola = generate_random(3, 1);
+  int hola = 1;
 
   printf("ANTES GET ALIEN\n");
   alien *my_alien = llist_get_by_index(aliens_a, index);
@@ -518,17 +590,26 @@ int alien_a_thread(void *param)
     move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, 0);
   }
 
+  /* PARTE ROSADA */
+  FIFO_scheduler(aliens_left_north, (void*)my_alien);
+
   for (int i = 0; i < 3; ++i)
   {
     move(&my_alien->pos, routes_a[hola][i], my_alien->velocity, aliens_a, my_alien->id, 0);
   }
 
+  /* INICIO PUENTE */
+
   move_bridge(&my_alien->pos, &my_alien->progress, 1);
+
+  /* FIN PUENTE */
 
   for (int i = 0; i < 3; ++i)
   {
     move(&my_alien->pos, routes_a[hola + 3][i], my_alien->velocity, aliens_a, my_alien->id, 0);
   }
+
+  /* FIN PARTE ROSADA */
 
   for (int i = 0; i < 3; ++i)
   {

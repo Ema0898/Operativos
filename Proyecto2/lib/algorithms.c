@@ -99,7 +99,7 @@ void semaphore_algorithm(algs_params *params){
   struct timeval tic2, toc2;
   float time_difference2, accumulator;
 
-  float sem_north_time = 5, sem_south_time = 10;
+  float sem_north_time = 50, sem_south_time = 10;
 
   params->amount_to_pass = 1;
 
