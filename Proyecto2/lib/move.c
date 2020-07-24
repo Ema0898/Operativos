@@ -27,7 +27,7 @@ int stop_move(point *actual, point dest, float dist_x, float dist_y)
   return cond_x && cond_y;
 }
 
-void move(point *actual, point dest, float velocity, llist *list, int index, lpthread_mutex_t *lock)
+void move(point *actual, point dest, float velocity, llist *list, int index, int community)
 {
   float dist_x = dest.x - actual->x;
   float dist_y = dest.y - actual->y;
@@ -43,11 +43,22 @@ void move(point *actual, point dest, float velocity, llist *list, int index, lpt
 
   SDL_Rect myself, other;
 
-  myself.h = 30;
-  myself.w = 30,
+  int square;
 
-  other.h = 30;
-  other.w = 30;
+  if (community == 0)
+  {
+    square = 28;
+  }
+  else if (community == 1)
+  {
+    square = 20;
+  }
+
+  myself.h = square;
+  myself.w = square;
+
+  other.h = square;
+  other.w = square;
 
   int intersection = 0;
   int size = 0;
@@ -66,11 +77,15 @@ void move(point *actual, point dest, float velocity, llist *list, int index, lpt
 
     for (int i = 0; i < size; ++i)
     {
-      printf("ANTES MOVE LIST\n");
       //Lmutex_lock(lock);
       alien *curr = llist_get_by_index(list, i);
       //Lmutex_unlock(lock);
-      printf("DESPUES MOVE LIST\n");
+
+      if (curr == NULL)
+      {
+        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+        break;
+      }
 
       if (index != curr->id)
       {

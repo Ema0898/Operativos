@@ -27,6 +27,9 @@ point routes_b[8][3];
 llist *aliens_a;
 llist *aliens_b;
 
+alien *invader;
+int invader_alive;
+
 int list_a_size = 0;
 int list_b_size = 0;
 int velocity = 0;
@@ -34,14 +37,15 @@ int finish = 0;
 
 int percentages[6];
 
-lpthread_mutex_t lock_a;
-lpthread_mutex_t lock_b;
+// lpthread_mutex_t lock_a;
+// lpthread_mutex_t lock_b;
 
 int alien_a_thread(void *param);
 int alien_b_thread(void *param);
 int automatic_mode_thread(void *param);
 
 int spawn_alien(int community, int type);
+int spawn_invader(void);
 
 int main(int argc, char *argv[])
 {
@@ -76,22 +80,24 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (Lmutex_init(&lock_a, NULL) != 0)
-  {
-    printf("\n Mutex for aliens A init has failed\n");
-    return 1;
-  }
+  // if (Lmutex_init(&lock_a, NULL) != 0)
+  // {
+  //   printf("\n Mutex for aliens A init has failed\n");
+  //   return 1;
+  // }
 
-  if (Lmutex_init(&lock_b, NULL) != 0)
-  {
-    printf("\n Mutex for aliens B init has failed\n");
-    return 1;
-  }
+  // if (Lmutex_init(&lock_b, NULL) != 0)
+  // {
+  //   printf("\n Mutex for aliens B init has failed\n");
+  //   return 1;
+  // }
 
   srand(time(NULL));
 
   aliens_a = llist_create(NULL);
   aliens_b = llist_create(NULL);
+
+  invader_alive = 0;
 
   memset(percentages, 0, 6);
   load_alien(&velocity, percentages);
@@ -139,6 +145,7 @@ int main(int argc, char *argv[])
   SDL_Texture *alien_b_alpha = load_texture("../assets/images/b2.png", ren);
   SDL_Texture *alien_a_beta = load_texture("../assets/images/a3.png", ren);
   SDL_Texture *alien_b_beta = load_texture("../assets/images/b3.png", ren);
+  SDL_Texture *invader_img = load_texture("../assets/images/invader.png", ren);
 
   SDL_Texture *brigde_road = load_texture("../assets/images/road.png", ren);
   SDL_Texture *bridge = load_texture("../assets/images/bridge.png", ren);
@@ -199,6 +206,10 @@ int main(int argc, char *argv[])
           spawn_alien(1, 2);
           break;
 
+        case SDLK_x:
+          spawn_invader();
+          break;
+
         default:
           break;
         }
@@ -206,13 +217,19 @@ int main(int argc, char *argv[])
 
       if ((e.type == SDL_MOUSEBUTTONDOWN) & SDL_BUTTON(SDL_BUTTON_LEFT))
       {
+        SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
+
         if (aliens_a_size != 0)
         {
-          SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
-
           for (int i = 0; i < aliens_a_size; ++i)
           {
             alien *curr = llist_get_by_index(aliens_a, i);
+
+            if (curr == NULL)
+            {
+              printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+              break;
+            }
 
             img_rect = get_texture_rect_wh(alien_a, curr->pos.x, curr->pos.y, 32, 32);
 
@@ -230,11 +247,15 @@ int main(int argc, char *argv[])
 
         if (aliens_b_size != 0)
         {
-          SDL_GetMouseState(&mouse_rect.x, &mouse_rect.y);
-
           for (int i = 0; i < aliens_b_size; ++i)
           {
             alien *curr = llist_get_by_index(aliens_b, i);
+
+            if (curr == NULL)
+            {
+              printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+              break;
+            }
 
             img_rect = get_texture_rect_wh(alien_b, curr->pos.x, curr->pos.y, 32, 32);
 
@@ -247,6 +268,17 @@ int main(int argc, char *argv[])
               list_b_size--;
               aliens_b_size--;
             }
+          }
+        }
+
+        if (invader_alive)
+        {
+          img_rect = get_texture_rect_wh(invader_img, 690, 530, 32, 32);
+
+          if (SDL_HasIntersection(&mouse_rect, &img_rect))
+          {
+            invader_alive = 0;
+            free(invader);
           }
         }
       }
@@ -285,6 +317,11 @@ int main(int argc, char *argv[])
       for (int i = 0; i < aliens_a_size; ++i)
       {
         alien *curr = llist_get_by_index(aliens_a, i);
+        if (curr == NULL)
+        {
+          printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+          break;
+        }
         switch (curr->type)
         {
         case 0:
@@ -312,6 +349,11 @@ int main(int argc, char *argv[])
       for (int i = 0; i < aliens_b_size; ++i)
       {
         alien *curr = llist_get_by_index(aliens_b, i);
+        if (curr == NULL)
+        {
+          printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+          break;
+        }
         switch (curr->type)
         {
         case 0:
@@ -330,6 +372,11 @@ int main(int argc, char *argv[])
           break;
         }
       }
+    }
+
+    if (invader_alive)
+    {
+      render_scale_texture(invader_img, ren, invader->pos.x, invader->pos.y, ALIEN_SIZE, ALIEN_SIZE);
     }
 
     SDL_RenderPresent(ren);
@@ -359,7 +406,13 @@ int main(int argc, char *argv[])
     for (int i = 0; i < aliens_a_size; ++i)
     {
       alien *curr = llist_get_by_index(aliens_a, i);
+      if (curr == NULL)
+      {
+        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+        break;
+      }
       Lthread_join(*(curr->thread), NULL);
+      printf("THREAD FOR ALIEN A INDEX %d JOINED\n", i);
     }
   }
 
@@ -368,7 +421,13 @@ int main(int argc, char *argv[])
     for (int i = 0; i < aliens_b_size; ++i)
     {
       alien *curr = llist_get_by_index(aliens_b, i);
+      if (curr == NULL)
+      {
+        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+        break;
+      }
       Lthread_join(*(curr->thread), NULL);
+      printf("THREAD FOR ALIEN B INDEX %d JOINED\n", i);
     }
   }
 
@@ -430,6 +489,17 @@ int spawn_alien(int community, int type)
   return 0;
 }
 
+int spawn_invader(void)
+{
+  if (invader_alive == 0)
+  {
+    invader_alive = 1;
+    invader = (alien *)malloc(sizeof(alien));
+    invader->pos.x = 690;
+    invader->pos.y = 530;
+  }
+}
+
 int alien_a_thread(void *param)
 {
   int index = *((int *)param);
@@ -445,24 +515,24 @@ int alien_a_thread(void *param)
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
+    move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, 0);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[hola][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
+    move(&my_alien->pos, routes_a[hola][i], my_alien->velocity, aliens_a, my_alien->id, 0);
   }
 
   move_bridge(&my_alien->pos, &my_alien->progress, 1);
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[hola + 3][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
+    move(&my_alien->pos, routes_a[hola + 3][i], my_alien->velocity, aliens_a, my_alien->id, 0);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[7][i], my_alien->velocity, aliens_a, my_alien->id, &lock_a);
+    move(&my_alien->pos, routes_a[7][i], my_alien->velocity, aliens_a, my_alien->id, 0);
   }
 
   //free(param);
@@ -494,24 +564,24 @@ int alien_b_thread(void *param)
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
+    move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, 1);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[hola][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
+    move(&my_alien->pos, routes_b[hola][i], my_alien->velocity, aliens_b, my_alien->id, 1);
   }
 
   move_bridge(&my_alien->pos, &my_alien->progress, -1);
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[hola + 3][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
+    move(&my_alien->pos, routes_b[hola + 3][i], my_alien->velocity, aliens_b, my_alien->id, 1);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[7][i], my_alien->velocity, aliens_b, my_alien->id, &lock_b);
+    move(&my_alien->pos, routes_b[7][i], my_alien->velocity, aliens_b, my_alien->id, 1);
   }
 
   //free(param);
