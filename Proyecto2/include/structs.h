@@ -5,12 +5,20 @@
 #include <lpthread.h>
 #include <list.h>
 
+#define ROUND_ROBIN 0
+#define PRIORITY    1
+#define FIFO        2
+#define SJF         3
+#define LOTTERY     4
+
 /* structs used for bridge variables */
 
 typedef struct
 {
   int weight;
   int length;
+  int bridge_type;
+  int quantum;
 } bridge;
 
 typedef struct
@@ -45,6 +53,8 @@ typedef struct
   int   amount_to_pass;
   int   bridge_weight;
   int  *weight_now;
+  int   turn;
+  bridge* bridge_struct;
 } algs_params;
 
 #endif
