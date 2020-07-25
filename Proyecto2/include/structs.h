@@ -11,6 +11,10 @@
 #define SJF 3
 #define LOTTERY 4
 
+#define Y_ALGORITHM 0
+#define SEMAPHORE_ALGORITM 1
+#define SURVIVAL_ALGORITHM 2
+
 /* structs used for bridge variables */
 
 typedef struct
@@ -55,6 +59,9 @@ typedef struct
   int *weight_now;
   int turn;
   bridge *bridge_struct;
+  int north_time;
+  int south_time;
+  int *turn_semaphore;
 } algs_params;
 
 typedef struct

@@ -28,7 +28,7 @@ int stop_move(point *actual, point dest, float dist_x, float dist_y)
   return cond_x && cond_y;
 }
 
-void move(point *actual, point dest, float velocity, llist *list, int index, int community)
+void move(point *actual, point dest, float velocity, llist *list, int index, int community, int *working)
 {
   float dist_x = dest.x - actual->x;
   float dist_y = dest.y - actual->y;
@@ -76,32 +76,37 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
     size = llist_get_size(list);
     //Lmutex_unlock(lock);
 
-    for (int i = 0; i < size; ++i)
+    intersection = 0;
+
+    if (!(*working))
     {
-      //Lmutex_lock(lock);
-      alien *curr = llist_get_by_index(list, i);
-      //Lmutex_unlock(lock);
-
-      if (curr == NULL)
+      for (int i = 0; i < size; ++i)
       {
-        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
-        break;
-      }
+        //Lmutex_lock(lock);
+        alien *curr = llist_get_by_index(list, i);
+        //Lmutex_unlock(lock);
 
-      if (index != curr->id)
-      {
-        other.x = curr->pos.x;
-        other.y = curr->pos.y;
-
-        if (SDL_HasIntersection(&myself, &other))
+        if (curr == NULL)
         {
-          intersection = 1;
+          printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+          break;
         }
-      }
 
-      //Lmutex_lock(lock);
-      size = llist_get_size(list);
-      //Lmutex_unlock(lock);
+        if (index != curr->id)
+        {
+          other.x = curr->pos.x;
+          other.y = curr->pos.y;
+
+          if (SDL_HasIntersection(&myself, &other))
+          {
+            intersection = 1;
+          }
+        }
+
+        //Lmutex_lock(lock);
+        size = llist_get_size(list);
+        //Lmutex_unlock(lock);
+      }
     }
 
     if (!intersection)

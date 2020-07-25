@@ -26,18 +26,22 @@ void FIFO_scheduler(llist *aliens, void *data)
   llist_insert_end(aliens, data);
 }
 
-void lottery_winner(llist *aliens)
+void *lottery_winner(llist *aliens)
 {
   // Genera un random con los tiquetes dados y se extrae al ganador de la lista
   alien *winner = NULL;
   srand((unsigned)time(&t));
+  int bingo;
+  int alien_index;
 
   while (winner == NULL)
   {
-    int bingo = rand() % llist_get_size(possible_numbers);
-    winner = (alien *)llist_get_winner(aliens, *((int *)llist_get_by_index(possible_numbers, bingo)));
-    llist_remove_by_index(possible_numbers, bingo);
+    bingo = rand() % llist_get_size(possible_numbers);
+    alien_index = *((int *)llist_get_by_index(possible_numbers, bingo));
+    winner = (alien *)llist_get_winner(aliens, alien_index);
   }
+  llist_remove_by_index(possible_numbers, alien_index);
+  return winner;
 }
 
 void lottery_scheduler(llist *aliens, void *data)
@@ -52,9 +56,8 @@ void lottery_scheduler(llist *aliens, void *data)
 
   int *tickets_to_give = (int *)malloc(sizeof(int) * 2);
 
-  for (int i = 0; i <= new_alien->priority; i++)
+  for (int i = 0; i < 2 - new_alien->priority; i++)
   {
-    printf("Dando el tiquete numero %d al alien\n", lottery_number_now);
     *(tickets_to_give + i) = lottery_number_now;
     llist_insert_end(possible_numbers, (void *)(tickets_to_give + i));
     lottery_number_now++;

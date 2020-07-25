@@ -29,6 +29,10 @@ point routes_b[8][3];
 llist *aliens_a;
 llist *aliens_b;
 
+configurable *bridge_left_conf;
+configurable *bridge_right_conf;
+configurable *bridge_center_conf;
+
 bridge *bridge_struct_left;
 bridge *bridge_struct_right;
 bridge *bridge_struct_center;
@@ -59,6 +63,10 @@ int list_a_size = 0;
 int list_b_size = 0;
 int velocity = 0;
 int finish = 0;
+
+int *turn_semaphore_left;
+int *turn_semaphore_center;
+int *turn_semaphore_right;
 
 int percentages[6];
 
@@ -136,44 +144,139 @@ int main(int argc, char *argv[])
   aliens_center_north = llist_create(NULL);
   aliens_center_south = llist_create(NULL);
 
+  bridge_left_conf = (configurable *)malloc(sizeof(configurable));
+  bridge_right_conf = (configurable *)malloc(sizeof(configurable));
+  bridge_center_conf = (configurable *)malloc(sizeof(configurable));
+
+  load_bridge_left(bridge_left_conf);
+  load_bridge_right(bridge_right_conf);
+  load_bridge_center(bridge_center_conf);
+
   bridge_struct_left = (bridge *)malloc(sizeof(bridge));
 
   bridge_struct_right = (bridge *)malloc(sizeof(bridge));
 
   bridge_struct_center = (bridge *)malloc(sizeof(bridge));
 
-  configurable *test = (configurable *)malloc(sizeof(configurable));
-  load_bridge_center(test);
-
-  printf("WEIGHT = %d\n", test->weight_confg);
-  printf("LENGTH = %d\n", test->length_confg);
-  printf("QUANTUM = %d\n", test->quantum_confg);
-  printf("SCHEDULER = %d\n", test->scheduler_confg);
-  printf("ALGORITHM = %d\n", test->algorithm_confg);
-  printf("Y = %d\n", test->y_algorithm_confg);
-  printf("SEMAPHORE N = %d\n", test->semaphore_south_confg);
-  printf("SEMAPHORE S = %d\n", test->semaphore_south_confg);
-
-  bridge_struct_left->weight = 20;
-  bridge_struct_left->length = 50;
-  bridge_struct_left->bridge_type = ROUND_ROBIN;
-  bridge_struct_left->quantum = 30;
+  // LEFT
+  bridge_struct_left->weight = bridge_left_conf->weight_confg;
+  bridge_struct_left->length = bridge_left_conf->length_confg;
+  bridge_struct_left->bridge_type = bridge_left_conf->scheduler_confg;
+  bridge_struct_left->quantum = bridge_left_conf->quantum_confg;
 
   weight_now_left = (int *)malloc(sizeof(int));
   *weight_now_left = 0;
+
+  turn_semaphore_left = (int *)malloc(sizeof(int));
+  *turn_semaphore_left = 0;
 
   params_left = (algs_params *)malloc(sizeof(algs_params));
   params_left->north = aliens_left_north;
   params_left->south = aliens_left_south;
   params_left->bridge = list_bridge_left;
-  params_left->amount_to_pass = 5;
-  params_left->bridge_weight = 50;
+  params_left->amount_to_pass = bridge_left_conf->y_algorithm_confg;
+  params_left->bridge_weight = bridge_left_conf->weight_confg;
   params_left->weight_now = weight_now_left;
   params_left->bridge_struct = bridge_struct_left;
+  params_left->north_time = bridge_left_conf->semaphore_north_confg;
+  params_left->south_time = bridge_left_conf->semaphore_south_confg;
+  params_left->turn_semaphore = turn_semaphore_left;
 
-  lpthread_t algorithms;
+  /////////////////////////////////////////////////////////////////////////////////////
+  //RIGHT
+  bridge_struct_right->weight = bridge_right_conf->weight_confg;
+  bridge_struct_right->length = bridge_right_conf->length_confg;
+  bridge_struct_right->bridge_type = bridge_right_conf->scheduler_confg;
+  bridge_struct_right->quantum = bridge_right_conf->quantum_confg;
 
-  Lthread_create(&algorithms, NULL, &semaphore_algorithm, params_left);
+  weight_now_right = (int *)malloc(sizeof(int));
+  *weight_now_right = 0;
+
+  turn_semaphore_right = (int *)malloc(sizeof(int));
+  *turn_semaphore_right = 0;
+
+  params_right = (algs_params *)malloc(sizeof(algs_params));
+  params_right->north = aliens_right_north;
+  params_right->south = aliens_right_south;
+  params_right->bridge = list_bridge_right;
+  params_right->amount_to_pass = bridge_right_conf->y_algorithm_confg;
+  params_right->bridge_weight = bridge_right_conf->weight_confg;
+  params_right->weight_now = weight_now_right;
+  params_right->bridge_struct = bridge_struct_right;
+  params_right->north_time = bridge_right_conf->semaphore_north_confg;
+  params_right->south_time = bridge_right_conf->semaphore_south_confg;
+  params_right->turn_semaphore = turn_semaphore_right;
+
+  //CENTER
+  bridge_struct_center->weight = bridge_center_conf->weight_confg;
+  bridge_struct_center->length = bridge_center_conf->length_confg;
+  bridge_struct_center->bridge_type = bridge_center_conf->scheduler_confg;
+  bridge_struct_center->quantum = bridge_center_conf->quantum_confg;
+
+  weight_now_center = (int *)malloc(sizeof(int));
+  *weight_now_center = 0;
+
+  turn_semaphore_center = (int *)malloc(sizeof(int));
+  *turn_semaphore_center = 0;
+
+  params_center = (algs_params *)malloc(sizeof(algs_params));
+  params_center->north = aliens_center_north;
+  params_center->south = aliens_center_south;
+  params_center->bridge = list_bridge_center;
+  params_center->amount_to_pass = bridge_center_conf->y_algorithm_confg;
+  params_center->bridge_weight = bridge_center_conf->weight_confg;
+  params_center->weight_now = weight_now_center;
+  params_center->bridge_struct = bridge_struct_center;
+  params_center->north_time = bridge_center_conf->semaphore_north_confg;
+  params_center->south_time = bridge_center_conf->semaphore_south_confg;
+  params_center->turn_semaphore = turn_semaphore_center;
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  lpthread_t algorithm_left, algorithm_right, algorithm_center;
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  //Algorithm left bridge
+  if (bridge_left_conf->algorithm_confg == Y_ALGORITHM)
+  {
+    Lthread_create(&algorithm_left, NULL, &Y_algorithm, params_left);
+  }
+  else if (bridge_left_conf->algorithm_confg == SEMAPHORE_ALGORITM)
+  {
+    Lthread_create(&algorithm_left, NULL, &semaphore_algorithm, params_left);
+  }
+  else
+  {
+    Lthread_create(&algorithm_left, NULL, &survival_algorithm, params_left);
+  }
+
+  // Algorith right bridge
+  if (bridge_right_conf->algorithm_confg == Y_ALGORITHM)
+  {
+    Lthread_create(&algorithm_right, NULL, &Y_algorithm, params_right);
+  }
+  else if (bridge_right_conf->algorithm_confg == SEMAPHORE_ALGORITM)
+  {
+    Lthread_create(&algorithm_right, NULL, &semaphore_algorithm, params_right);
+  }
+  else
+  {
+    Lthread_create(&algorithm_right, NULL, &survival_algorithm, params_right);
+  }
+
+  //Algorith center bridge
+  if (bridge_center_conf->algorithm_confg == Y_ALGORITHM)
+  {
+    Lthread_create(&algorithm_center, NULL, &Y_algorithm, params_center);
+  }
+  else if (bridge_center_conf->algorithm_confg == SEMAPHORE_ALGORITM)
+  {
+    Lthread_create(&algorithm_center, NULL, &semaphore_algorithm, params_center);
+  }
+  else
+  {
+    Lthread_create(&algorithm_center, NULL, &survival_algorithm, params_center);
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
 
   invader_alive = 0;
 
@@ -242,6 +345,7 @@ int main(int argc, char *argv[])
 
   int aliens_a_size = 0;
   int aliens_b_size = 0;
+  int alien_mouse_pos = 0;
 
   while (!quit)
   {
@@ -313,12 +417,61 @@ int main(int argc, char *argv[])
 
             if (SDL_HasIntersection(&mouse_rect, &img_rect))
             {
+              printf("Turn left %d\n", *turn_semaphore_left);
               lpthread_t *thread = curr->thread;
               Lthread_exit(thread->pid);
 
               llist_remove_by_index(aliens_a, i);
               list_a_size--;
               aliens_a_size--;
+              alien_mouse_pos = llist_get_alien_index(aliens_left_north, curr->id);
+              if (alien_mouse_pos != -1)
+              {
+                llist_remove_by_index(aliens_left_north, alien_mouse_pos);
+              }
+              else
+              {
+                alien_mouse_pos = llist_get_alien_index(aliens_center_north, curr->id);
+                if (alien_mouse_pos != -1)
+                {
+                  llist_remove_by_index(aliens_center_north, alien_mouse_pos);
+                }
+                else
+                {
+                  alien_mouse_pos = llist_get_alien_index(aliens_right_north, curr->id);
+                  if (alien_mouse_pos != -1)
+                  {
+                    llist_remove_by_index(aliens_right_north, alien_mouse_pos);
+                  }
+                  else
+                  {
+                    alien_mouse_pos = llist_get_alien_index(list_bridge_left, curr->id);
+                    if (alien_mouse_pos != -1)
+                    {
+                      *weight_now_left -= curr->weight;
+                      llist_remove_by_index(list_bridge_left, alien_mouse_pos);
+                    }
+                    else
+                    {
+                      alien_mouse_pos = llist_get_alien_index(list_bridge_center, curr->id);
+                      if (alien_mouse_pos != -1)
+                      {
+                        *weight_now_center -= curr->weight;
+                        llist_remove_by_index(list_bridge_center, alien_mouse_pos);
+                      }
+                      else
+                      {
+                        alien_mouse_pos = llist_get_alien_index(list_bridge_right, curr->id);
+                        if (alien_mouse_pos != -1)
+                        {
+                          *weight_now_right -= curr->weight;
+                          llist_remove_by_index(list_bridge_right, alien_mouse_pos);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -345,6 +498,55 @@ int main(int argc, char *argv[])
               llist_remove_by_index(aliens_b, i);
               list_b_size--;
               aliens_b_size--;
+
+              alien_mouse_pos = llist_get_alien_index(aliens_left_south, curr->id);
+              if (alien_mouse_pos != -1)
+              {
+                llist_remove_by_index(aliens_left_south, alien_mouse_pos);
+              }
+              else
+              {
+                alien_mouse_pos = llist_get_alien_index(aliens_center_south, curr->id);
+                if (alien_mouse_pos != -1)
+                {
+                  llist_remove_by_index(aliens_center_south, alien_mouse_pos);
+                }
+                else
+                {
+                  alien_mouse_pos = llist_get_alien_index(aliens_right_south, curr->id);
+                  if (alien_mouse_pos != -1)
+                  {
+                    llist_remove_by_index(aliens_right_south, alien_mouse_pos);
+                  }
+                  else
+                  {
+                    alien_mouse_pos = llist_get_alien_index(list_bridge_left, curr->id);
+                    if (alien_mouse_pos != -1)
+                    {
+                      *weight_now_left -= curr->weight;
+                      llist_remove_by_index(list_bridge_left, alien_mouse_pos);
+                    }
+                    else
+                    {
+                      alien_mouse_pos = llist_get_alien_index(list_bridge_center, curr->id);
+                      if (alien_mouse_pos != -1)
+                      {
+                        *weight_now_center -= curr->weight;
+                        llist_remove_by_index(list_bridge_center, alien_mouse_pos);
+                      }
+                      else
+                      {
+                        alien_mouse_pos = llist_get_alien_index(list_bridge_right, curr->id);
+                        if (alien_mouse_pos != -1)
+                        {
+                          *weight_now_right -= curr->weight;
+                          llist_remove_by_index(list_bridge_right, alien_mouse_pos);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -491,11 +693,13 @@ int main(int argc, char *argv[])
   llist_free(aliens_center_north);
   llist_free(aliens_center_south);
 
+  free(bridge_left_conf);
+  free(bridge_right_conf);
+  free(bridge_center_conf);
+
   free(bridge_struct_left);
   free(bridge_struct_right);
   free(bridge_struct_center);
-
-  free(test);
 
   free(weight_now_left);
 
@@ -537,9 +741,12 @@ int main(int argc, char *argv[])
   printf("ALIENS B JOINED\n");
 
   Lthread_join(automatic_mode, NULL);
+  printf("AUTOMATIC MODE JOINED\n");
 
   llist_free(aliens_a);
   llist_free(aliens_b);
+
+  printf("ALIEN LISTS FREE\n");
 
   return 0;
 }
@@ -561,8 +768,20 @@ int spawn_alien(int community, int type)
   entity->duration = 10;
   entity->working = 0;
   entity->accumulator = 0;
-  entity->priority = 0;
   entity->weight = 15;
+
+  if (entity->type == 0)
+  {
+    entity->priority = 1;
+  }
+  else if (entity->type == 1)
+  {
+    entity->priority = 1;
+  }
+  else if (entity->type == 2)
+  {
+    entity->priority = 0;
+  }
 
   int percentage = (rand() % (200 - 50 + 1)) + 50;
   entity->velocity = generate_alien_velocity(entity->type, velocity, percentage);
@@ -618,27 +837,99 @@ int alien_a_thread(void *param)
 {
   int index = *((int *)param);
 
-  //int hola = generate_random(3, 1);
-  int hola = 1;
+  int bridge_decision = generate_random(3, 1);
+  // int bridge_decision = 1;
 
-  printf("ANTES GET ALIEN\n");
   alien *my_alien = llist_get_by_index(aliens_a, index);
-  printf("DESPUES GET ALIEN\n");
 
   int id = my_alien->thread->pid;
   my_alien->id = id;
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, 0);
+    move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
   }
 
   /* PARTE ROSADA */
-  FIFO_scheduler(aliens_left_north, (void *)my_alien);
+  if (bridge_decision == 1)
+  {
+    // Izquierdo
+    my_alien->duration = bridge_struct_left->length / my_alien->velocity;
+    if (bridge_struct_left->bridge_type == ROUND_ROBIN)
+    {
+      FIFO_scheduler(aliens_left_north, (void *)my_alien);
+    }
+    else if (bridge_struct_left->bridge_type == PRIORITY)
+    {
+      priority_scheduler(aliens_left_north, (void *)my_alien);
+    }
+    else if (bridge_struct_left->bridge_type == FIFO)
+    {
+      FIFO_scheduler(aliens_left_north, (void *)my_alien);
+    }
+    else if (bridge_struct_left->bridge_type == SJF)
+    {
+      SJF_scheduler(aliens_left_north, (void *)my_alien);
+    }
+    else
+    {
+      lottery_scheduler(aliens_left_north, (void *)my_alien);
+    }
+  }
+  else if (bridge_decision == 2)
+  {
+    // Derecha
+    my_alien->duration = bridge_struct_right->length / my_alien->velocity;
+    if (bridge_struct_right->bridge_type == ROUND_ROBIN)
+    {
+      FIFO_scheduler(aliens_right_north, (void *)my_alien);
+    }
+    else if (bridge_struct_right->bridge_type == PRIORITY)
+    {
+      priority_scheduler(aliens_right_north, (void *)my_alien);
+    }
+    else if (bridge_struct_right->bridge_type == FIFO)
+    {
+      FIFO_scheduler(aliens_right_north, (void *)my_alien);
+    }
+    else if (bridge_struct_right->bridge_type == SJF)
+    {
+      SJF_scheduler(aliens_right_north, (void *)my_alien);
+    }
+    else
+    {
+      lottery_scheduler(aliens_right_north, (void *)my_alien);
+    }
+  }
+  else
+  {
+    // Centro
+    my_alien->duration = bridge_struct_center->length / my_alien->velocity;
+    if (bridge_struct_center->bridge_type == ROUND_ROBIN)
+    {
+      FIFO_scheduler(aliens_center_north, (void *)my_alien);
+    }
+    else if (bridge_struct_center->bridge_type == PRIORITY)
+    {
+      priority_scheduler(aliens_center_north, (void *)my_alien);
+    }
+    else if (bridge_struct_center->bridge_type == FIFO)
+    {
+      FIFO_scheduler(aliens_center_north, (void *)my_alien);
+    }
+    else if (bridge_struct_center->bridge_type == SJF)
+    {
+      SJF_scheduler(aliens_center_north, (void *)my_alien);
+    }
+    else
+    {
+      lottery_scheduler(aliens_center_north, (void *)my_alien);
+    }
+  }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[hola][i], my_alien->velocity, aliens_a, my_alien->id, 0);
+    move(&my_alien->pos, routes_a[bridge_decision][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
   }
 
   /* INICIO PUENTE */
@@ -649,14 +940,14 @@ int alien_a_thread(void *param)
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[hola + 3][i], my_alien->velocity, aliens_a, my_alien->id, 0);
+    move(&my_alien->pos, routes_a[bridge_decision + 3][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
   }
 
   /* FIN PARTE ROSADA */
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[7][i], my_alien->velocity, aliens_a, my_alien->id, 0);
+    move(&my_alien->pos, routes_a[7][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
   }
 
   //free(param);
@@ -677,42 +968,116 @@ int alien_b_thread(void *param)
 {
   int index = *((int *)param);
 
-  int hola = generate_random(3, 1);
+  int bridge_decision = generate_random(3, 1);
+  // int bridge_decision = 1;
 
-  printf("ANTES GET ALIEN\n");
   alien *my_alien = llist_get_by_index(aliens_b, index);
-  printf("DESPUES GET ALIEN\n");
 
   int id = my_alien->thread->pid;
   my_alien->id = id;
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, 1);
+    move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
+  }
+
+  if (bridge_decision == 1)
+  {
+    // Izquierdo
+    my_alien->duration = bridge_struct_left->length / my_alien->velocity;
+
+    if (bridge_struct_left->bridge_type == ROUND_ROBIN)
+    {
+      FIFO_scheduler(aliens_left_south, (void *)my_alien);
+    }
+    else if (bridge_struct_left->bridge_type == PRIORITY)
+    {
+      priority_scheduler(aliens_left_south, (void *)my_alien);
+    }
+    else if (bridge_struct_left->bridge_type == FIFO)
+    {
+      FIFO_scheduler(aliens_left_south, (void *)my_alien);
+    }
+    else if (bridge_struct_left->bridge_type == SJF)
+    {
+      SJF_scheduler(aliens_left_south, (void *)my_alien);
+    }
+    else
+    {
+      lottery_scheduler(aliens_left_south, (void *)my_alien);
+    }
+  }
+  else if (bridge_decision == 2)
+  {
+    // Derecha
+    my_alien->duration = bridge_struct_right->length / my_alien->velocity;
+    if (bridge_struct_right->bridge_type == ROUND_ROBIN)
+    {
+      FIFO_scheduler(aliens_right_south, (void *)my_alien);
+    }
+    else if (bridge_struct_right->bridge_type == PRIORITY)
+    {
+      priority_scheduler(aliens_right_south, (void *)my_alien);
+    }
+    else if (bridge_struct_right->bridge_type == FIFO)
+    {
+      FIFO_scheduler(aliens_right_south, (void *)my_alien);
+    }
+    else if (bridge_struct_right->bridge_type == SJF)
+    {
+      SJF_scheduler(aliens_right_south, (void *)my_alien);
+    }
+    else
+    {
+      lottery_scheduler(aliens_right_south, (void *)my_alien);
+    }
+  }
+  else
+  {
+    // Centro
+    my_alien->duration = bridge_struct_center->length / my_alien->velocity;
+    if (bridge_struct_center->bridge_type == ROUND_ROBIN)
+    {
+      FIFO_scheduler(aliens_center_south, (void *)my_alien);
+    }
+    else if (bridge_struct_center->bridge_type == PRIORITY)
+    {
+      priority_scheduler(aliens_center_south, (void *)my_alien);
+    }
+    else if (bridge_struct_center->bridge_type == FIFO)
+    {
+      FIFO_scheduler(aliens_center_south, (void *)my_alien);
+    }
+    else if (bridge_struct_center->bridge_type == SJF)
+    {
+      SJF_scheduler(aliens_center_south, (void *)my_alien);
+    }
+    else
+    {
+      lottery_scheduler(aliens_center_south, (void *)my_alien);
+    }
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[hola][i], my_alien->velocity, aliens_b, my_alien->id, 1);
+    move(&my_alien->pos, routes_b[bridge_decision][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
   }
 
   move_bridge(&my_alien->pos, &my_alien->progress, -1);
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[hola + 3][i], my_alien->velocity, aliens_b, my_alien->id, 1);
+    move(&my_alien->pos, routes_b[bridge_decision + 3][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[7][i], my_alien->velocity, aliens_b, my_alien->id, 1);
+    move(&my_alien->pos, routes_b[7][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
   }
 
   //free(param);
 
   int curr_index = llist_get_alien_index(aliens_b, my_alien->id);
-
-  printf("CURR INDEX = %d\n", curr_index);
 
   llist_remove_by_index(aliens_b, curr_index);
   list_b_size--;
