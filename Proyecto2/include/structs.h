@@ -57,4 +57,17 @@ typedef struct
   bridge *bridge_struct;
 } algs_params;
 
+typedef struct
+{
+  int y_algorithm_confg;
+  int semaphore_north_confg;
+  int semaphore_south_confg;
+  int quantum_confg;
+  int length_confg;
+  int weight_confg;
+  int scheduler_confg;
+  int algorithm_confg;
+
+} configurable;
+
 #endif

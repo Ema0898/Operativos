@@ -142,13 +142,17 @@ int main(int argc, char *argv[])
 
   bridge_struct_center = (bridge *)malloc(sizeof(bridge));
 
-  bridge *test = (bridge *)malloc(sizeof(bridge));
-  load_bridge(test);
+  configurable *test = (configurable *)malloc(sizeof(configurable));
+  load_bridge_center(test);
 
-  printf("WEIGHT = %d\n", test->weight);
-  printf("LENGTH = %d\n", test->length);
-  printf("QUANTUM = %d\n", test->quantum);
-  printf("TYPE = %d\n", test->bridge_type);
+  printf("WEIGHT = %d\n", test->weight_confg);
+  printf("LENGTH = %d\n", test->length_confg);
+  printf("QUANTUM = %d\n", test->quantum_confg);
+  printf("SCHEDULER = %d\n", test->scheduler_confg);
+  printf("ALGORITHM = %d\n", test->algorithm_confg);
+  printf("Y = %d\n", test->y_algorithm_confg);
+  printf("SEMAPHORE N = %d\n", test->semaphore_south_confg);
+  printf("SEMAPHORE S = %d\n", test->semaphore_south_confg);
 
   bridge_struct_left->weight = 20;
   bridge_struct_left->length = 50;
