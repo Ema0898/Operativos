@@ -23,6 +23,8 @@ typedef struct
   int length;
   int bridge_type;
   int quantum;
+  int amount_north;
+  int amount_south;
 } bridge;
 
 typedef struct
@@ -47,6 +49,7 @@ typedef struct
   int type;
   float velocity;
   int id;
+  int rr_quantum;
 } alien;
 
 typedef struct
@@ -62,6 +65,8 @@ typedef struct
   int north_time;
   int south_time;
   int *turn_semaphore;
+  int *aliens_count_north;
+  int *aliens_count_south;
 } algs_params;
 
 typedef struct
@@ -74,6 +79,8 @@ typedef struct
   int weight_confg;
   int scheduler_confg;
   int algorithm_confg;
+  int amount_north_confg;
+  int amount_south_confg;
 
 } configurable;
 

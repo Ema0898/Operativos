@@ -76,6 +76,9 @@ void load_bridge_right(configurable *a)
   config_lookup_int(cf1, "semaphore_north", &a->semaphore_north_confg);
   config_lookup_int(cf1, "semaphore_south", &a->semaphore_south_confg);
   config_lookup_int(cf1, "y_algorithm", &a->y_algorithm_confg);
+
+  config_lookup_int(cf1, "amount_north", &a->amount_north_confg);
+  config_lookup_int(cf1, "amount_south", &a->amount_south_confg);
 }
 
 void load_bridge_left(configurable *a)
@@ -89,6 +92,9 @@ void load_bridge_left(configurable *a)
   config_lookup_int(cf2, "semaphore_north", &a->semaphore_north_confg);
   config_lookup_int(cf2, "semaphore_south", &a->semaphore_south_confg);
   config_lookup_int(cf2, "y_algorithm", &a->y_algorithm_confg);
+
+  config_lookup_int(cf2, "amount_north", &a->amount_north_confg);
+  config_lookup_int(cf2, "amount_south", &a->amount_south_confg);
 }
 
 void load_bridge_center(configurable *a)
@@ -102,11 +108,15 @@ void load_bridge_center(configurable *a)
   config_lookup_int(cf3, "semaphore_north", &a->semaphore_north_confg);
   config_lookup_int(cf3, "semaphore_south", &a->semaphore_south_confg);
   config_lookup_int(cf3, "y_algorithm", &a->y_algorithm_confg);
+
+  config_lookup_int(cf3, "amount_north", &a->amount_north_confg);
+  config_lookup_int(cf3, "amount_south", &a->amount_south_confg);
 }
 
-void load_alien(int *velocity, int *percentages)
+void load_alien(int *velocity, int *percentages, int *weight)
 {
   config_lookup_int(cf, "velocity", velocity);
+  config_lookup_int(cf, "weight", weight);
 
   config_lookup_int(cf, "alien_a_base", &percentages[0]);
   config_lookup_int(cf, "alien_a_alpha", &percentages[1]);

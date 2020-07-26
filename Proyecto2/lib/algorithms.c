@@ -41,6 +41,7 @@ void bridge_list_update(algs_params *params)
         time_difference2 = (double)(alien_now->last_update.tv_usec - alien_now->work_init_time.tv_usec) / 1000000 + (double)(alien_now->last_update.tv_sec - alien_now->work_init_time.tv_sec);
         if (params->bridge_struct->quantum <= time_difference2)
         {
+          alien_now->rr_quantum = 1;
           llist_remove_by_index(params->bridge, i);
           *params->weight_now -= alien_now->weight;
           if (params->turn == 0)
@@ -69,6 +70,20 @@ void Y_algorithm(algs_params *params)
 
   while (1)
   {
+    if (turn == 0)
+    {
+      if (llist_get_size(params->north) < params->amount_to_pass && llist_get_size(params->south) > llist_get_size(params->north))
+      {
+        turn = 1;
+      }
+    }
+    else
+    {
+      if (llist_get_size(params->south) < params->amount_to_pass && llist_get_size(params->north) > llist_get_size(params->south))
+      {
+        turn = 0;
+      }
+    }
 
     for (i = 0; i < params->amount_to_pass; i++)
     {
@@ -121,6 +136,14 @@ void Y_algorithm(algs_params *params)
       gettimeofday(&alien_to_move->last_update, NULL);
       gettimeofday(&alien_to_move->work_init_time, NULL);
       llist_insert_end(params->bridge, alien_to_move);
+      if (turn == 0)
+      {
+        *params->aliens_count_north += 1;
+      }
+      else
+      {
+        *params->aliens_count_south += 1;
+      }
     }
     while (llist_get_size(params->bridge) > 0)
     {
@@ -129,13 +152,15 @@ void Y_algorithm(algs_params *params)
     }
 
     turn = !turn;
+    *params->aliens_count_north = 0;
+    *params->aliens_count_south = 0;
   }
 }
 
 void survival_algorithm(algs_params *params)
 {
   // Toma las dos listas y solo pasa 1 de cada una al algoritmo Y
-  params->amount_to_pass = 1;
+  params->amount_to_pass = 1000;
   Y_algorithm(params);
 }
 

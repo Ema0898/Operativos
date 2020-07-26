@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include <lpthread.h>
 #include <utilities.h>
+#include <lpthread.h>
 
 int stop_move(point *actual, point dest, float dist_x, float dist_y)
 {
@@ -88,7 +89,6 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
 
         if (curr == NULL)
         {
-          printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
           break;
         }
 
@@ -129,7 +129,7 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
   actual->y = ceil(actual->y);
 }
 
-void move_bridge(point *actual, float *progress, int direcction, llist *list, int index, int community)
+int move_bridge(point *actual, float *progress, int direcction, llist *list, int index, int community, int *quantum_over, short *working)
 {
   float init_pos_y = actual->y;
   int bridge_height = 120;
@@ -179,7 +179,6 @@ void move_bridge(point *actual, float *progress, int direcction, llist *list, in
 
       if (curr == NULL)
       {
-        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
         break;
       }
 
@@ -196,18 +195,26 @@ void move_bridge(point *actual, float *progress, int direcction, llist *list, in
       size = llist_get_size(list);
     }
 
-    if (!intersection)
+    if (!intersection && *working)
     {
       actual->y = (bridge_height * (*progress)) * direcction + init_pos_y;
+    }
+
+    if (*quantum_over)
+    {
+      return 1;
     }
 
     intersection = 0;
 
     usleep(16666 * 2);
   }
+
+  return 0;
 }
 
-void move_invader(point *actual, point dest, float velocity)
+void move_invader(point *actual, point dest, float velocity, llist *aliens_a, llist *aliens_b, llist *list_bridge_left, llist *list_bridge_right, llist *list_bridge_center,
+                  llist *aliens_left_north, llist *aliens_left_south, llist *aliens_right_north, llist *aliens_right_south, llist *aliens_center_north, llist *aliens_center_south, int *list_a_size, int *list_b_size, int *weight_now_left, int *weight_now_right, int *weight_now_center)
 {
   float dist_x = dest.x - actual->x;
   float dist_y = dest.y - actual->y;
@@ -219,8 +226,182 @@ void move_invader(point *actual, point dest, float velocity)
 
   int moving = 1;
 
+  float tmp_x, tmp_y;
+
+  SDL_Rect myself, other, other2;
+
+  myself.h = 28;
+  myself.w = 28;
+
+  other.h = 28;
+  other.w = 28;
+
+  other2.h = 28;
+  other2.w = 28;
+
+  int size_a = 0;
+  int size_b = 0;
+
   while (moving)
   {
+    tmp_x = actual->x + dist_x * velocity;
+    tmp_y = actual->y + dist_y * velocity;
+
+    myself.x = tmp_x;
+    myself.y = tmp_y;
+
+    size_a = llist_get_size(aliens_a);
+    size_b = llist_get_size(aliens_b);
+
+    int alien_mouse_pos = 0;
+
+    for (int i = 0; i < size_a; ++i)
+    {
+      alien *curr = llist_get_by_index(aliens_a, i);
+
+      if (curr == NULL)
+      {
+        break;
+      }
+
+      other.x = curr->pos.x;
+      other.y = curr->pos.y;
+
+      if (SDL_HasIntersection(&myself, &other) && curr->type == 2)
+      {
+        lpthread_t *thread = curr->thread;
+        Lthread_exit(thread->pid);
+
+        *list_a_size -= 1;
+
+        llist_remove_by_index(aliens_a, i);
+        alien_mouse_pos = llist_get_alien_index(aliens_left_north, curr->id);
+        if (alien_mouse_pos != -1)
+        {
+          llist_remove_by_index(aliens_left_north, alien_mouse_pos);
+        }
+        else
+        {
+          alien_mouse_pos = llist_get_alien_index(aliens_center_north, curr->id);
+          if (alien_mouse_pos != -1)
+          {
+            llist_remove_by_index(aliens_center_north, alien_mouse_pos);
+          }
+          else
+          {
+            alien_mouse_pos = llist_get_alien_index(aliens_right_north, curr->id);
+            if (alien_mouse_pos != -1)
+            {
+              llist_remove_by_index(aliens_right_north, alien_mouse_pos);
+            }
+            else
+            {
+              alien_mouse_pos = llist_get_alien_index(list_bridge_left, curr->id);
+              if (alien_mouse_pos != -1)
+              {
+                *weight_now_left -= curr->weight;
+                llist_remove_by_index(list_bridge_left, alien_mouse_pos);
+              }
+              else
+              {
+                alien_mouse_pos = llist_get_alien_index(list_bridge_center, curr->id);
+                if (alien_mouse_pos != -1)
+                {
+                  *weight_now_center -= curr->weight;
+                  llist_remove_by_index(list_bridge_center, alien_mouse_pos);
+                }
+                else
+                {
+                  alien_mouse_pos = llist_get_alien_index(list_bridge_right, curr->id);
+                  if (alien_mouse_pos != -1)
+                  {
+                    *weight_now_right -= curr->weight;
+                    llist_remove_by_index(list_bridge_right, alien_mouse_pos);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      size_a = llist_get_size(aliens_a);
+    }
+
+    for (int i = 0; i < size_b; ++i)
+    {
+      alien *curr = llist_get_by_index(aliens_b, i);
+
+      if (curr == NULL)
+      {
+        break;
+      }
+
+      other2.x = curr->pos.x;
+      other2.y = curr->pos.y;
+
+      if (SDL_HasIntersection(&myself, &other2) && curr->type == 2)
+      {
+        lpthread_t *thread2 = curr->thread;
+        Lthread_exit(thread2->pid);
+
+        *list_b_size -= 1;
+
+        llist_remove_by_index(aliens_b, i);
+
+        alien_mouse_pos = llist_get_alien_index(aliens_left_south, curr->id);
+        if (alien_mouse_pos != -1)
+        {
+          llist_remove_by_index(aliens_left_south, alien_mouse_pos);
+        }
+        else
+        {
+          alien_mouse_pos = llist_get_alien_index(aliens_center_south, curr->id);
+          if (alien_mouse_pos != -1)
+          {
+            llist_remove_by_index(aliens_center_south, alien_mouse_pos);
+          }
+          else
+          {
+            alien_mouse_pos = llist_get_alien_index(aliens_right_south, curr->id);
+            if (alien_mouse_pos != -1)
+            {
+              llist_remove_by_index(aliens_right_south, alien_mouse_pos);
+            }
+            else
+            {
+              alien_mouse_pos = llist_get_alien_index(list_bridge_left, curr->id);
+              if (alien_mouse_pos != -1)
+              {
+                *weight_now_left -= curr->weight;
+                llist_remove_by_index(list_bridge_left, alien_mouse_pos);
+              }
+              else
+              {
+                alien_mouse_pos = llist_get_alien_index(list_bridge_center, curr->id);
+                if (alien_mouse_pos != -1)
+                {
+                  *weight_now_center -= curr->weight;
+                  llist_remove_by_index(list_bridge_center, alien_mouse_pos);
+                }
+                else
+                {
+                  alien_mouse_pos = llist_get_alien_index(list_bridge_right, curr->id);
+                  if (alien_mouse_pos != -1)
+                  {
+                    *weight_now_right -= curr->weight;
+                    llist_remove_by_index(list_bridge_right, alien_mouse_pos);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      size_b = llist_get_size(aliens_b);
+    }
+
     actual->x += dist_x * velocity;
     actual->y += dist_y * velocity;
 

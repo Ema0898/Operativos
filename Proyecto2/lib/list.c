@@ -282,7 +282,6 @@ void *llist_get_winner(llist *list, int winner)
     new_alien = (alien *)curr->data;
     if ((*new_alien->lottery_numbers == winner || *(new_alien->lottery_numbers + 1) == winner) && (new_alien->working != 1))
     {
-      printf("Ganador el tiquete %d con el alien con duracion %f!\n", winner, new_alien->duration);
       return curr->data;
     }
     curr = curr->next;

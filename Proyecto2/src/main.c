@@ -56,12 +56,20 @@ int *weight_now_left;
 int *weight_now_right;
 int *weight_now_center;
 
+int *aliens_count_north_left;
+int *aliens_count_south_left;
+int *aliens_count_north_right;
+int *aliens_count_south_right;
+int *aliens_count_north_center;
+int *aliens_count_south_center;
+
 alien *invader;
 int invader_alive;
 
 int list_a_size = 0;
 int list_b_size = 0;
 int velocity = 0;
+int aliens_weight = 0;
 int finish = 0;
 
 int *turn_semaphore_left;
@@ -69,9 +77,6 @@ int *turn_semaphore_center;
 int *turn_semaphore_right;
 
 int percentages[6];
-
-// lpthread_mutex_t lock_a;
-// lpthread_mutex_t lock_b;
 
 lpthread_t invader_thread_id;
 
@@ -124,18 +129,6 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  // if (Lmutex_init(&lock_a, NULL) != 0)
-  // {
-  //   printf("\n Mutex for aliens A init has failed\n");
-  //   return 1;
-  // }
-
-  // if (Lmutex_init(&lock_b, NULL) != 0)
-  // {
-  //   printf("\n Mutex for aliens B init has failed\n");
-  //   return 1;
-  // }
-
   srand(time(NULL));
 
   aliens_a = llist_create(NULL);
@@ -151,6 +144,20 @@ int main(int argc, char *argv[])
   aliens_right_south = llist_create(NULL);
   aliens_center_north = llist_create(NULL);
   aliens_center_south = llist_create(NULL);
+
+  aliens_count_north_left = (int *)malloc(sizeof(int));
+  aliens_count_north_right = (int *)malloc(sizeof(int));
+  aliens_count_south_left = (int *)malloc(sizeof(int));
+  aliens_count_south_right = (int *)malloc(sizeof(int));
+  aliens_count_north_center = (int *)malloc(sizeof(int));
+  aliens_count_south_center = (int *)malloc(sizeof(int));
+
+  *aliens_count_north_left = 0;
+  *aliens_count_north_right = 0;
+  *aliens_count_south_left = 0;
+  *aliens_count_south_right = 0;
+  *aliens_count_north_center = 0;
+  *aliens_count_south_center = 0;
 
   bridge_left_conf = (configurable *)malloc(sizeof(configurable));
   bridge_right_conf = (configurable *)malloc(sizeof(configurable));
@@ -171,6 +178,8 @@ int main(int argc, char *argv[])
   bridge_struct_left->length = bridge_left_conf->length_confg;
   bridge_struct_left->bridge_type = bridge_left_conf->scheduler_confg;
   bridge_struct_left->quantum = bridge_left_conf->quantum_confg;
+  bridge_struct_left->amount_north = bridge_left_conf->amount_north_confg;
+  bridge_struct_left->amount_south = bridge_left_conf->amount_south_confg;
 
   weight_now_left = (int *)malloc(sizeof(int));
   *weight_now_left = 0;
@@ -189,6 +198,8 @@ int main(int argc, char *argv[])
   params_left->north_time = bridge_left_conf->semaphore_north_confg;
   params_left->south_time = bridge_left_conf->semaphore_south_confg;
   params_left->turn_semaphore = turn_semaphore_left;
+  params_left->aliens_count_north = aliens_count_north_left;
+  params_left->aliens_count_south = aliens_count_south_left;
 
   /////////////////////////////////////////////////////////////////////////////////////
   //RIGHT
@@ -196,6 +207,8 @@ int main(int argc, char *argv[])
   bridge_struct_right->length = bridge_right_conf->length_confg;
   bridge_struct_right->bridge_type = bridge_right_conf->scheduler_confg;
   bridge_struct_right->quantum = bridge_right_conf->quantum_confg;
+  bridge_struct_right->amount_north = bridge_right_conf->amount_north_confg;
+  bridge_struct_right->amount_south = bridge_right_conf->amount_south_confg;
 
   weight_now_right = (int *)malloc(sizeof(int));
   *weight_now_right = 0;
@@ -214,12 +227,16 @@ int main(int argc, char *argv[])
   params_right->north_time = bridge_right_conf->semaphore_north_confg;
   params_right->south_time = bridge_right_conf->semaphore_south_confg;
   params_right->turn_semaphore = turn_semaphore_right;
+  params_right->aliens_count_north = aliens_count_north_right;
+  params_right->aliens_count_south = aliens_count_south_right;
 
   //CENTER
   bridge_struct_center->weight = bridge_center_conf->weight_confg;
   bridge_struct_center->length = bridge_center_conf->length_confg;
   bridge_struct_center->bridge_type = bridge_center_conf->scheduler_confg;
   bridge_struct_center->quantum = bridge_center_conf->quantum_confg;
+  bridge_struct_center->amount_north = bridge_center_conf->amount_north_confg;
+  bridge_struct_center->amount_south = bridge_center_conf->amount_south_confg;
 
   weight_now_center = (int *)malloc(sizeof(int));
   *weight_now_center = 0;
@@ -238,6 +255,8 @@ int main(int argc, char *argv[])
   params_center->north_time = bridge_center_conf->semaphore_north_confg;
   params_center->south_time = bridge_center_conf->semaphore_south_confg;
   params_center->turn_semaphore = turn_semaphore_center;
+  params_center->aliens_count_north = aliens_count_north_center;
+  params_center->aliens_count_south = aliens_count_south_center;
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
   lpthread_t algorithm_left, algorithm_right, algorithm_center;
@@ -295,7 +314,7 @@ int main(int argc, char *argv[])
   invader_alive = 0;
 
   memset(percentages, 0, 6);
-  load_alien(&velocity, percentages);
+  load_alien(&velocity, percentages, &aliens_weight);
 
   lpthread_t automatic_mode;
 
@@ -373,8 +392,12 @@ int main(int argc, char *argv[])
   int aliens_b_size = 0;
   int alien_mouse_pos = 0;
 
-  int hola = 0;
   char tmp[10];
+  char tmp1[10];
+  char tmp2[10];
+  char tmp3[10];
+  char tmp4[10];
+  char tmp5[10];
 
   while (!quit)
   {
@@ -438,7 +461,7 @@ int main(int argc, char *argv[])
 
             if (curr == NULL)
             {
-              printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+              printf("BREAKING LOOP\n");
               break;
             }
 
@@ -446,7 +469,6 @@ int main(int argc, char *argv[])
 
             if (SDL_HasIntersection(&mouse_rect, &img_rect))
             {
-              hola++;
               lpthread_t *thread = curr->thread;
               Lthread_exit(thread->pid);
 
@@ -513,7 +535,7 @@ int main(int argc, char *argv[])
 
             if (curr == NULL)
             {
-              printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+              printf("BREAKING LOOP\n");
               break;
             }
 
@@ -628,7 +650,7 @@ int main(int argc, char *argv[])
         alien *curr = llist_get_by_index(aliens_a, i);
         if (curr == NULL)
         {
-          printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+          printf("BREAKING LOOP\n");
           break;
         }
         switch (curr->type)
@@ -648,6 +670,8 @@ int main(int argc, char *argv[])
         default:
           break;
         }
+
+        aliens_a_size = llist_get_size(aliens_a);
       }
     }
 
@@ -660,7 +684,7 @@ int main(int argc, char *argv[])
         alien *curr = llist_get_by_index(aliens_b, i);
         if (curr == NULL)
         {
-          printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+          printf("BREAKING LOOP\n");
           break;
         }
         switch (curr->type)
@@ -680,6 +704,7 @@ int main(int argc, char *argv[])
         default:
           break;
         }
+        aliens_b_size = llist_get_size(aliens_b);
       }
     }
 
@@ -706,37 +731,51 @@ int main(int argc, char *argv[])
       render_scale_texture(*turn_semaphore_right == 1 ? semaphore_green : semaphore_red, ren, 960, 370, 20, 20);
     }
 
-    tmp[10];
-    SDL_itoa(hola, tmp, 10);
-
     if (is_y_left)
     {
-      text_left_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      SDL_itoa(*aliens_count_north_left, tmp, 10);
+
+      text_left_north = render_text(tmp, "../assets/fonts/font.ttf", color, 12, ren);
       render_full_texture(text_left_north, ren, 300, 300);
 
-      text_left_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
-      render_full_texture(text_left_north, ren, 300, 370);
+      SDL_itoa(*aliens_count_south_left, tmp1, 10);
+
+      text_left_south = render_text(tmp1, "../assets/fonts/font.ttf", color, 12, ren);
+      render_full_texture(text_left_south, ren, 300, 370);
     }
 
     if (is_y_right)
     {
-      text_right_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      SDL_itoa(*aliens_count_north_right, tmp2, 10);
+
+      text_right_north = render_text(tmp2, "../assets/fonts/font.ttf", color, 12, ren);
       render_full_texture(text_right_north, ren, 960, 300);
 
-      text_right_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
-      render_full_texture(text_right_north, ren, 960, 370);
+      SDL_itoa(*aliens_count_south_right, tmp3, 10);
+
+      text_right_south = render_text(tmp3, "../assets/fonts/font.ttf", color, 12, ren);
+      render_full_texture(text_right_south, ren, 960, 370);
     }
 
     if (is_y_center)
     {
-      text_center_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      SDL_itoa(*aliens_count_north_center, tmp4, 10);
+
+      text_center_north = render_text(tmp4, "../assets/fonts/font.ttf", color, 12, ren);
       render_full_texture(text_center_north, ren, 630, 300);
 
-      text_center_south = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      SDL_itoa(*aliens_count_south_center, tmp5, 10);
+
+      text_center_south = render_text(tmp5, "../assets/fonts/font.ttf", color, 12, ren);
       render_full_texture(text_center_south, ren, 630, 370);
     }
 
     memset(tmp, 0, 10);
+    memset(tmp1, 0, 10);
+    memset(tmp2, 0, 10);
+    memset(tmp3, 0, 10);
+    memset(tmp4, 0, 10);
+    memset(tmp5, 0, 10);
 
     SDL_RenderPresent(ren);
 
@@ -783,10 +822,29 @@ int main(int argc, char *argv[])
   free(bridge_struct_center);
 
   free(weight_now_left);
+  free(weight_now_right);
+  free(weight_now_center);
 
   free(params_left);
+  free(params_right);
+  free(params_center);
+
+  free(aliens_count_north_left);
+  free(aliens_count_south_left);
+  free(aliens_count_north_right);
+  free(aliens_count_south_right);
+  free(aliens_count_north_center);
+  free(aliens_count_south_center);
 
   /* JOIN THREADS */
+  Lthread_join(algorithm_left, NULL);
+  Lthread_join(algorithm_right, NULL);
+  Lthread_join(algorithm_center, NULL);
+  printf("ALGORITHMS THREADS JOINED\n");
+
+  Lthread_join(invader_thread_id, NULL);
+  printf("INVADER THREAD JOINED\n");
+
   if (aliens_a_size != 0)
   {
     for (int i = 0; i < aliens_a_size; ++i)
@@ -794,11 +852,10 @@ int main(int argc, char *argv[])
       alien *curr = llist_get_by_index(aliens_a, i);
       if (curr == NULL)
       {
-        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+        printf("BREAKING LOOP\n");
         break;
       }
       Lthread_join(*(curr->thread), NULL);
-      printf("THREAD FOR ALIEN A INDEX %d JOINED\n", i);
     }
   }
 
@@ -811,11 +868,10 @@ int main(int argc, char *argv[])
       alien *curr = llist_get_by_index(aliens_b, i);
       if (curr == NULL)
       {
-        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+        printf("BREAKING LOOP\n");
         break;
       }
       Lthread_join(*(curr->thread), NULL);
-      printf("THREAD FOR ALIEN B INDEX %d JOINED\n", i);
     }
   }
 
@@ -849,7 +905,8 @@ int spawn_alien(int community, int type)
   entity->duration = 10;
   entity->working = 0;
   entity->accumulator = 0;
-  entity->weight = 15;
+  entity->weight = aliens_weight;
+  entity->rr_quantum = 0;
 
   if (entity->type == 0)
   {
@@ -876,7 +933,7 @@ int spawn_alien(int community, int type)
 
     llist_insert_by_index(aliens_a, entity, list_a_size);
 
-    iret1 = Lthread_create(entity->thread, NULL, &alien_a_thread, arg);
+    iret1 = Lthread_create(entity->thread, NULL, &alien_a_thread, entity);
 
     list_a_size++;
   }
@@ -889,7 +946,7 @@ int spawn_alien(int community, int type)
 
     llist_insert_by_index(aliens_b, entity, list_b_size);
 
-    iret1 = Lthread_create(entity->thread, NULL, &alien_b_thread, arg);
+    iret1 = Lthread_create(entity->thread, NULL, &alien_b_thread, entity);
 
     list_b_size++;
   }
@@ -916,19 +973,65 @@ int spawn_invader(void)
 
 int alien_a_thread(void *param)
 {
-  int index = *((int *)param);
+  //int index = *((int *)param);
 
   int bridge_decision = generate_random(3, 1);
   // int bridge_decision = 1;
 
-  alien *my_alien = llist_get_by_index(aliens_a, index);
+  printf("ANTES GET ALIEN A\n");
+  //alien *my_alien = llist_get_by_index(aliens_a, index);
+  alien *my_alien = (alien *)param;
+  printf("DESPUES GET ALIEN A\n");
 
   int id = my_alien->thread->pid;
   my_alien->id = id;
 
+  printf("no me cai :3 ALIEN A\n");
+
   for (int i = 0; i < 3; ++i)
   {
     move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
+  }
+
+  printf("no me cai :3 ALIEN A 2\n");
+
+  int can_move = 0;
+
+  while (!can_move)
+  {
+    if (bridge_decision == 1)
+    {
+      if (llist_get_size(aliens_left_north) < bridge_struct_left->amount_north)
+      {
+        can_move = 1;
+      }
+      else
+      {
+        bridge_decision = generate_random(3, 1);
+      }
+    }
+    else if (bridge_decision == 2)
+    {
+      if (llist_get_size(aliens_right_north) < bridge_struct_right->amount_north)
+      {
+        can_move = 1;
+      }
+      else
+      {
+        bridge_decision = generate_random(3, 1);
+      }
+    }
+    else
+    {
+      if (llist_get_size(aliens_center_north) < bridge_struct_center->amount_north)
+      {
+        can_move = 1;
+      }
+      else
+      {
+        bridge_decision = generate_random(3, 1);
+      }
+    }
   }
 
   /* PARTE ROSADA */
@@ -1008,6 +1111,8 @@ int alien_a_thread(void *param)
     }
   }
 
+init_bridge:
+
   for (int i = 0; i < 3; ++i)
   {
     move(&my_alien->pos, routes_a[bridge_decision][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
@@ -1015,7 +1120,19 @@ int alien_a_thread(void *param)
 
   /* INICIO PUENTE */
 
-  move_bridge(&my_alien->pos, &my_alien->progress, 1, aliens_a, my_alien->id, 0);
+  int bridge_result = move_bridge(&my_alien->pos, &my_alien->progress, 1, aliens_a, my_alien->id, 0, &my_alien->rr_quantum, &my_alien->working);
+
+  if (bridge_result)
+  {
+    my_alien->pos.y -= 240;
+    if (bridge_decision == 2)
+    {
+      my_alien->pos.y = 150;
+      my_alien->pos.x = 660;
+    }
+    my_alien->rr_quantum = 0;
+    goto init_bridge;
+  }
 
   /* FIN PUENTE */
 
@@ -1035,31 +1152,74 @@ int alien_a_thread(void *param)
 
   int curr_index = llist_get_alien_index(aliens_a, my_alien->id);
 
-  printf("CURR INDEX = %d\n", curr_index);
-
   llist_remove_by_index(aliens_a, curr_index);
   list_a_size--;
 
-  printf("Thread end\n");
+  //printf("Thread end\n");
 
   return 0;
 }
 
 int alien_b_thread(void *param)
 {
-  int index = *((int *)param);
+  //int index = *((int *)param);
 
   int bridge_decision = generate_random(3, 1);
   // int bridge_decision = 1;
 
-  alien *my_alien = llist_get_by_index(aliens_b, index);
+  printf("ANTES GET ALIEN B\n");
+  //alien *my_alien = llist_get_by_index(aliens_b, index);
+  alien *my_alien = (alien *)param;
+  printf("DESPUES GET ALIEN B\n");
 
   int id = my_alien->thread->pid;
   my_alien->id = id;
 
+  printf("no me cai :3 B\n");
+
   for (int i = 0; i < 3; ++i)
   {
     move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
+  }
+  printf("no me cai :3 B2\n");
+
+  int can_move = 0;
+
+  while (!can_move)
+  {
+    if (bridge_decision == 1)
+    {
+      if (llist_get_size(aliens_left_south) < bridge_struct_left->amount_south)
+      {
+        can_move = 1;
+      }
+      else
+      {
+        bridge_decision = generate_random(3, 1);
+      }
+    }
+    else if (bridge_decision == 2)
+    {
+      if (llist_get_size(aliens_right_south) < bridge_struct_right->amount_south)
+      {
+        can_move = 1;
+      }
+      else
+      {
+        bridge_decision = generate_random(3, 1);
+      }
+    }
+    else
+    {
+      if (llist_get_size(aliens_center_south) < bridge_struct_center->amount_south)
+      {
+        can_move = 1;
+      }
+      else
+      {
+        bridge_decision = generate_random(3, 1);
+      }
+    }
   }
 
   if (bridge_decision == 1)
@@ -1139,12 +1299,26 @@ int alien_b_thread(void *param)
     }
   }
 
+init_bridge2:
+
   for (int i = 0; i < 3; ++i)
   {
     move(&my_alien->pos, routes_b[bridge_decision][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
   }
 
-  move_bridge(&my_alien->pos, &my_alien->progress, -1, aliens_b, my_alien->id, 1);
+  int bridge_result2 = move_bridge(&my_alien->pos, &my_alien->progress, -1, aliens_b, my_alien->id, 1, &my_alien->rr_quantum, &my_alien->working);
+
+  if (bridge_result2)
+  {
+    my_alien->pos.y += 240;
+    if (bridge_decision == 1)
+    {
+      my_alien->pos.y = 500;
+      my_alien->pos.x = 600;
+    }
+    my_alien->rr_quantum = 0;
+    goto init_bridge2;
+  }
 
   for (int i = 0; i < 3; ++i)
   {
@@ -1163,7 +1337,7 @@ int alien_b_thread(void *param)
   llist_remove_by_index(aliens_b, curr_index);
   list_b_size--;
 
-  printf("Thread end\n");
+  //printf("Thread end\n");
 
   return 0;
 }
@@ -1222,20 +1396,27 @@ int invader_thread(void *param)
   }
 
   int rand_route = generate_random(3, 1);
+  //int rand_route = 1;
 
   for (int i = 0; i < 3; ++i)
   {
-    move_invader(&invader->pos, route[rand_route][i], velocity * 2);
+    move_invader(&invader->pos, route[rand_route][i], velocity * 2, aliens_a, aliens_b, list_bridge_left, list_bridge_right, list_bridge_center,
+                 aliens_left_north, aliens_left_south, aliens_right_north, aliens_right_south, aliens_center_north, aliens_center_south, &list_a_size, &list_b_size,
+                 weight_now_left, weight_now_right, weight_now_center);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move_invader(&invader->pos, route[rand_route + 3][i], velocity * 2);
+    move_invader(&invader->pos, route[rand_route + 3][i], velocity * 2, aliens_a, aliens_b, list_bridge_left, list_bridge_right, list_bridge_center,
+                 aliens_left_north, aliens_left_south, aliens_right_north, aliens_right_south, aliens_center_north, aliens_center_south, &list_a_size, &list_b_size,
+                 weight_now_left, weight_now_right, weight_now_center);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move_invader(&invader->pos, route[7][i], velocity * 2);
+    move_invader(&invader->pos, route[7][i], velocity * 2, aliens_a, aliens_b, list_bridge_left, list_bridge_right, list_bridge_center,
+                 aliens_left_north, aliens_left_south, aliens_right_north, aliens_right_south, aliens_center_north, aliens_center_south, &list_a_size, &list_b_size,
+                 weight_now_left, weight_now_right, weight_now_center);
   }
 
   invader_alive = 0;
