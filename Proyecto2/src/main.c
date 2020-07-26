@@ -88,6 +88,14 @@ int main(int argc, char *argv[])
   int medium = 0;
   int manual = 0;
 
+  int is_semaphore_left = 0;
+  int is_semaphore_center = 0;
+  int is_semaphore_right = 0;
+
+  int is_y_left = 0;
+  int is_y_center = 0;
+  int is_y_right = 0;
+
   if (!valdite_args(argc, argv, &medium))
   {
     return 1;
@@ -239,38 +247,44 @@ int main(int argc, char *argv[])
   if (bridge_left_conf->algorithm_confg == Y_ALGORITHM)
   {
     Lthread_create(&algorithm_left, NULL, &Y_algorithm, params_left);
+    is_y_left = 1;
   }
   else if (bridge_left_conf->algorithm_confg == SEMAPHORE_ALGORITM)
   {
     Lthread_create(&algorithm_left, NULL, &semaphore_algorithm, params_left);
+    is_semaphore_left = 1;
   }
   else
   {
     Lthread_create(&algorithm_left, NULL, &survival_algorithm, params_left);
   }
 
-  // Algorith right bridge
+  // Algorithm right bridge
   if (bridge_right_conf->algorithm_confg == Y_ALGORITHM)
   {
     Lthread_create(&algorithm_right, NULL, &Y_algorithm, params_right);
+    is_y_right = 1;
   }
   else if (bridge_right_conf->algorithm_confg == SEMAPHORE_ALGORITM)
   {
     Lthread_create(&algorithm_right, NULL, &semaphore_algorithm, params_right);
+    is_semaphore_right = 1;
   }
   else
   {
     Lthread_create(&algorithm_right, NULL, &survival_algorithm, params_right);
   }
 
-  //Algorith center bridge
+  //Algorithm center bridge
   if (bridge_center_conf->algorithm_confg == Y_ALGORITHM)
   {
     Lthread_create(&algorithm_center, NULL, &Y_algorithm, params_center);
+    is_y_center = 1;
   }
   else if (bridge_center_conf->algorithm_confg == SEMAPHORE_ALGORITM)
   {
     Lthread_create(&algorithm_center, NULL, &semaphore_algorithm, params_center);
+    is_semaphore_center = 1;
   }
   else
   {
@@ -335,6 +349,16 @@ int main(int argc, char *argv[])
   SDL_Texture *base_a = load_texture("../assets/images/A.png", ren);
   SDL_Texture *base_b = load_texture("../assets/images/B.png", ren);
 
+  SDL_Texture *semaphore_red = load_texture("../assets/images/semaphore_red.png", ren);
+  SDL_Texture *semaphore_green = load_texture("../assets/images/semaphore_green.png", ren);
+
+  SDL_Texture *text_left_north;
+  SDL_Texture *text_left_south;
+  SDL_Texture *text_right_north;
+  SDL_Texture *text_right_south;
+  SDL_Texture *text_center_north;
+  SDL_Texture *text_center_south;
+
   int quit = 0;
 
   SDL_Event e;
@@ -343,9 +367,14 @@ int main(int argc, char *argv[])
   SDL_Rect img_rect;
   mouse_rect.w = mouse_rect.h = 1;
 
+  SDL_Color color = {255, 255, 255, 255};
+
   int aliens_a_size = 0;
   int aliens_b_size = 0;
   int alien_mouse_pos = 0;
+
+  int hola = 0;
+  char tmp[10];
 
   while (!quit)
   {
@@ -417,7 +446,7 @@ int main(int argc, char *argv[])
 
             if (SDL_HasIntersection(&mouse_rect, &img_rect))
             {
-              printf("Turn left %d\n", *turn_semaphore_left);
+              hola++;
               lpthread_t *thread = curr->thread;
               Lthread_exit(thread->pid);
 
@@ -659,6 +688,56 @@ int main(int argc, char *argv[])
       render_scale_texture(invader_img, ren, invader->pos.x, invader->pos.y, ALIEN_SIZE, ALIEN_SIZE);
     }
 
+    if (is_semaphore_left)
+    {
+      render_scale_texture(*turn_semaphore_left == 0 ? semaphore_green : semaphore_red, ren, 300, 300, 20, 20);
+      render_scale_texture(*turn_semaphore_left == 1 ? semaphore_green : semaphore_red, ren, 300, 370, 20, 20);
+    }
+
+    if (is_semaphore_center)
+    {
+      render_scale_texture(*turn_semaphore_center == 0 ? semaphore_green : semaphore_red, ren, 630, 300, 20, 20);
+      render_scale_texture(*turn_semaphore_center == 1 ? semaphore_green : semaphore_red, ren, 630, 370, 20, 20);
+    }
+
+    if (is_semaphore_right)
+    {
+      render_scale_texture(*turn_semaphore_right == 0 ? semaphore_green : semaphore_red, ren, 960, 300, 20, 20);
+      render_scale_texture(*turn_semaphore_right == 1 ? semaphore_green : semaphore_red, ren, 960, 370, 20, 20);
+    }
+
+    tmp[10];
+    SDL_itoa(hola, tmp, 10);
+
+    if (is_y_left)
+    {
+      text_left_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      render_full_texture(text_left_north, ren, 300, 300);
+
+      text_left_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      render_full_texture(text_left_north, ren, 300, 370);
+    }
+
+    if (is_y_right)
+    {
+      text_right_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      render_full_texture(text_right_north, ren, 960, 300);
+
+      text_right_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      render_full_texture(text_right_north, ren, 960, 370);
+    }
+
+    if (is_y_center)
+    {
+      text_center_north = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      render_full_texture(text_center_north, ren, 630, 300);
+
+      text_center_south = render_text(tmp, "../assets/fonts/font.ttf", color, 10, ren);
+      render_full_texture(text_center_south, ren, 630, 370);
+    }
+
+    memset(tmp, 0, 10);
+
     SDL_RenderPresent(ren);
 
     SDL_Delay(16.666667 * 2);
@@ -672,6 +751,8 @@ int main(int argc, char *argv[])
   SDL_DestroyTexture(background);
   SDL_DestroyTexture(base_a);
   SDL_DestroyTexture(base_b);
+  SDL_DestroyTexture(semaphore_red);
+  SDL_DestroyTexture(semaphore_green);
   SDL_DestroyRenderer(ren);
   SDL_DestroyWindow(win);
 
@@ -934,7 +1015,7 @@ int alien_a_thread(void *param)
 
   /* INICIO PUENTE */
 
-  move_bridge(&my_alien->pos, &my_alien->progress, 1);
+  move_bridge(&my_alien->pos, &my_alien->progress, 1, aliens_a, my_alien->id, 0);
 
   /* FIN PUENTE */
 
@@ -1063,7 +1144,7 @@ int alien_b_thread(void *param)
     move(&my_alien->pos, routes_b[bridge_decision][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
   }
 
-  move_bridge(&my_alien->pos, &my_alien->progress, -1);
+  move_bridge(&my_alien->pos, &my_alien->progress, -1, aliens_b, my_alien->id, 1);
 
   for (int i = 0; i < 3; ++i)
   {

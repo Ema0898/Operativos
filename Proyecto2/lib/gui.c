@@ -3,6 +3,8 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
+TTF_Font *font;
+
 void log_error(char *msg)
 {
   printf("Error in %s: %s\n", msg, SDL_GetError());
@@ -21,7 +23,7 @@ SDL_Texture *load_texture(const char *file, SDL_Renderer *ren)
 
 SDL_Texture *render_text(char *msg, char *file, SDL_Color color, int size, SDL_Renderer *ren)
 {
-  TTF_Font *font = TTF_OpenFont(file, size);
+  font = TTF_OpenFont(file, size);
   if (font == NULL)
   {
     log_error("TTF Open Font");

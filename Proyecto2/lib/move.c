@@ -28,7 +28,7 @@ int stop_move(point *actual, point dest, float dist_x, float dist_y)
   return cond_x && cond_y;
 }
 
-void move(point *actual, point dest, float velocity, llist *list, int index, int community, int *working)
+void move(point *actual, point dest, float velocity, llist *list, int index, int community, short *working)
 {
   float dist_x = dest.x - actual->x;
   float dist_y = dest.y - actual->y;
@@ -129,16 +129,81 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
   actual->y = ceil(actual->y);
 }
 
-void move_bridge(point *actual, float *progress, int direcction)
+void move_bridge(point *actual, float *progress, int direcction, llist *list, int index, int community)
 {
   float init_pos_y = actual->y;
   int bridge_height = 120;
 
+  float tmp_x, tmp_y;
+
+  SDL_Rect myself, other;
+
+  int square;
+
+  if (community == 0)
+  {
+    square = 28;
+  }
+  else if (community == 1)
+  {
+    square = 20;
+  }
+
+  myself.h = square;
+  myself.w = square;
+
+  other.h = square;
+  other.w = square;
+
+  int intersection = 0;
+  int size = 0;
+
+  tmp_x = actual->x;
+
   while (*progress < 1)
   {
-    actual->y = (bridge_height * (*progress)) * direcction + init_pos_y;
+    tmp_y = (bridge_height * (*progress)) * direcction + init_pos_y;
 
-    usleep(16666);
+    myself.x = tmp_x;
+    myself.y = tmp_y;
+
+    size = llist_get_size(list);
+
+    intersection = 0;
+
+    // actual->y = (bridge_height * (*progress)) * direcction + init_pos_y;
+
+    for (int i = 0; i < size; ++i)
+    {
+      alien *curr = llist_get_by_index(list, i);
+
+      if (curr == NULL)
+      {
+        printf("INDEX OUT OF RANGE ERROR. BREAKING LOOP\n");
+        break;
+      }
+
+      if (index != curr->id)
+      {
+        other.x = curr->pos.x;
+        other.y = curr->pos.y;
+
+        if (SDL_HasIntersection(&myself, &other) && curr->working)
+        {
+          intersection = 1;
+        }
+      }
+      size = llist_get_size(list);
+    }
+
+    if (!intersection)
+    {
+      actual->y = (bridge_height * (*progress)) * direcction + init_pos_y;
+    }
+
+    intersection = 0;
+
+    usleep(16666 * 2);
   }
 }
 
