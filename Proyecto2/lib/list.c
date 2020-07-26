@@ -3,6 +3,7 @@
 #include "list.h"
 #include <structs.h>
 
+/* llist_create: Create a linked list */
 llist *llist_create(void *new_data)
 {
   struct node *new_node;
@@ -16,6 +17,7 @@ llist *llist_create(void *new_data)
   return new_list;
 }
 
+/* llist_free: Free a linked list */
 void llist_free(llist *list)
 {
   struct node *curr = *list;
@@ -31,6 +33,7 @@ void llist_free(llist *list)
   free(list);
 }
 
+/* llist_push: Add to head of list */
 void llist_push(llist *list, void *data)
 {
   struct node *head;
@@ -58,6 +61,7 @@ void llist_push(llist *list, void *data)
   }
 }
 
+/* insert node at the end */
 void llist_insert_end(llist *list, void *data)
 {
   struct node *head;
@@ -82,6 +86,7 @@ void llist_insert_end(llist *list, void *data)
   }
 }
 
+/* llist_pop: remove and return head of linked list */
 void *llist_pop(llist *list)
 {
   void *popped_data;
@@ -105,6 +110,7 @@ void *llist_pop(llist *list)
   return popped_data;
 }
 
+/* get list size */
 int llist_get_size(llist *list)
 {
   struct node *head = *list;
@@ -124,6 +130,7 @@ int llist_get_size(llist *list)
   return counter;
 }
 
+/* insert scheduler attribute */
 void llist_insert_scheduler_attribute(llist *list, void *data, int comparation)
 {
   /**
@@ -156,6 +163,7 @@ void llist_insert_scheduler_attribute(llist *list, void *data, int comparation)
   }
 }
 
+/* get node by index */
 void *llist_get_by_index(llist *list, int index)
 {
   void *popped_data;
@@ -178,6 +186,7 @@ void *llist_get_by_index(llist *list, int index)
   return popped_data;
 }
 
+/* remove node by index */
 int llist_remove_by_index(llist *list, int Id)
 {
   struct node *curr = *list;
@@ -220,6 +229,7 @@ int llist_remove_by_index(llist *list, int Id)
   return 0;
 }
 
+/* llist_print: print linked list */
 void llist_print(llist *list)
 {
   struct node *curr = *list;
@@ -232,6 +242,7 @@ void llist_print(llist *list)
   }
 }
 
+/* insert node by index */
 int llist_insert_by_index(llist *list, void *data, int Id)
 {
   struct node *curr = *list;
@@ -265,6 +276,7 @@ int llist_insert_by_index(llist *list, void *data, int Id)
   return 0;
 }
 
+/* get winner */
 void *llist_get_winner(llist *list, int winner)
 {
   alien *new_alien;
@@ -290,6 +302,7 @@ void *llist_get_winner(llist *list, int winner)
   return NULL;
 }
 
+/* get node index by id */
 int llist_get_alien_index(llist *list, int id)
 {
   struct node *curr = *list;

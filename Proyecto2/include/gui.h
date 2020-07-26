@@ -1,6 +1,7 @@
 #ifndef _GUI_H
 #define _GUI_H
 
+/* Library for graphic interface */
 SDL_Texture *load_texture(const char *file, SDL_Renderer *ren);
 SDL_Texture *render_text(char *msg, char *file, SDL_Color color, int size, SDL_Renderer *ren);
 void render_scale_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y, int w, int h);

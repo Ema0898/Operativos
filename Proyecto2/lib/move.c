@@ -8,6 +8,7 @@
 #include <utilities.h>
 #include <lpthread.h>
 
+/* checks if alien reaches its destiny */
 int stop_move(point *actual, point dest, float dist_x, float dist_y)
 {
   int cond_x, cond_y;
@@ -29,6 +30,7 @@ int stop_move(point *actual, point dest, float dist_x, float dist_y)
   return cond_x && cond_y;
 }
 
+/* move alien and checks collisions */
 void move(point *actual, point dest, float velocity, llist *list, int index, int community, short *working)
 {
   float dist_x = dest.x - actual->x;
@@ -73,9 +75,7 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
     myself.x = tmp_x;
     myself.y = tmp_y;
 
-    //Lmutex_lock(lock);
     size = llist_get_size(list);
-    //Lmutex_unlock(lock);
 
     intersection = 0;
 
@@ -83,9 +83,7 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
     {
       for (int i = 0; i < size; ++i)
       {
-        //Lmutex_lock(lock);
         alien *curr = llist_get_by_index(list, i);
-        //Lmutex_unlock(lock);
 
         if (curr == NULL)
         {
@@ -102,10 +100,7 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
             intersection = 1;
           }
         }
-
-        //Lmutex_lock(lock);
         size = llist_get_size(list);
-        //Lmutex_unlock(lock);
       }
     }
 
@@ -129,6 +124,7 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
   actual->y = ceil(actual->y);
 }
 
+/* moves alien in the bridge section */
 int move_bridge(point *actual, float *progress, int direcction, llist *list, int index, int community, int *quantum_over, short *working)
 {
   float init_pos_y = actual->y;
@@ -171,8 +167,6 @@ int move_bridge(point *actual, float *progress, int direcction, llist *list, int
 
     intersection = 0;
 
-    // actual->y = (bridge_height * (*progress)) * direcction + init_pos_y;
-
     for (int i = 0; i < size; ++i)
     {
       alien *curr = llist_get_by_index(list, i);
@@ -213,6 +207,7 @@ int move_bridge(point *actual, float *progress, int direcction, llist *list, int
   return 0;
 }
 
+/* move invader alien */
 void move_invader(point *actual, point dest, float velocity, llist *aliens_a, llist *aliens_b, llist *list_bridge_left, llist *list_bridge_right, llist *list_bridge_center,
                   llist *aliens_left_north, llist *aliens_left_south, llist *aliens_right_north, llist *aliens_right_south, llist *aliens_center_north, llist *aliens_center_south, int *list_a_size, int *list_b_size, int *weight_now_left, int *weight_now_right, int *weight_now_center)
 {
@@ -417,6 +412,7 @@ void move_invader(point *actual, point dest, float velocity, llist *aliens_a, ll
   actual->y = ceil(actual->y);
 }
 
+/* generates aliens velocity based in its type */
 float generate_alien_velocity(int type, int base_velocity, int percentage)
 {
   float result = 1;
@@ -442,6 +438,7 @@ float generate_alien_velocity(int type, int base_velocity, int percentage)
   return result;
 }
 
+/* init aliens routes */
 void init_routes(point routes_a[8][3], point routes_b[8][3])
 {
   /* Community A to Init Pink */

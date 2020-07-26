@@ -4,11 +4,11 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sched.h>	   /* For clone */
-#include <signal.h>	   /* For SIGCHLD */
+#include <sched.h>		 /* For clone */
+#include <signal.h>		 /* For SIGCHLD */
 #include <sys/types.h> /* For pid_t */
-#include <sys/wait.h>  /* For wait */
-#include <unistd.h>	   /* For getpid */
+#include <sys/wait.h>	 /* For wait */
+#include <unistd.h>		 /* For getpid */
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
@@ -32,8 +32,8 @@
 */
 typedef struct
 {
-	pid_t pid;	   /* The pid of the child thread as returned by clone */
-	void *stack;   /* The stack pointer */
+	pid_t pid;		 /* The pid of the child thread as returned by clone */
+	void *stack;	 /* The stack pointer */
 	char detached; // Detached or not
 } lpthread_t;
 

@@ -6,6 +6,7 @@
 #include <time.h>
 #include <math.h>
 
+/* load map file */
 int load_map(int map[24][46])
 {
   FILE *file = fopen("../assets/map/map1.map", "r");
@@ -170,6 +171,7 @@ int is_number(char *text)
   return 1;
 }
 
+/* validate user input */
 int valdite_args(int argc, char *argv[], int *medium)
 {
   if (argc != 3)
@@ -198,6 +200,7 @@ int valdite_args(int argc, char *argv[], int *medium)
   return 1;
 }
 
+/* generate random numbers with upper and lower numbers */
 int generate_random(int upper, int lower)
 {
   return (rand() % (upper - lower + 1)) + lower;
@@ -211,6 +214,7 @@ double ran_expo(double lambda)
   return -log(1 - u) / lambda;
 }
 
+/* generate automatic aliens probability */
 void generate_probability(int *a_probability, int *b_probability, int *percentages)
 {
   int a_alpha = percentages[1];
@@ -244,4 +248,69 @@ void generate_probability(int *a_probability, int *b_probability, int *percentag
       b_probability[i] = 2;
     }
   }
+}
+
+/*
+ * Prints text in color
+ * 1: Bold Red
+ * 2: Bold Blue
+ * 3: Bold Green
+ * 4: Bold Yellow
+ * 5: Bold Magenta
+ * 6: Bold Cyan
+*/
+void printc(char *msg, int color)
+{
+  if (color == 1)
+  {
+    printf("\033[1;31m");
+    printf("%s", msg);
+    printf("\033[0m");
+  }
+  else if (color == 2)
+  {
+    printf("\033[1;34m");
+    printf("%s", msg);
+    printf("\033[0m");
+  }
+  else if (color == 3)
+  {
+    printf("\033[1;32m");
+    printf("%s", msg);
+    printf("\033[0m");
+  }
+  else if (color == 4)
+  {
+    printf("\033[1;33m");
+    printf("%s", msg);
+    printf("\033[0m");
+  }
+  else if (color == 5)
+  {
+    printf("\033[1;35m");
+    printf("%s", msg);
+    printf("\033[0m");
+  }
+  else if (color == 6)
+  {
+    printf("\033[1;36m");
+    printf("%s", msg);
+    printf("\033[0m");
+  }
+}
+
+/* prints program instrcutions */
+void print_instructions(void)
+{
+  printc("################ Program Instructions #################\n", 2);
+  printc("##################### Community A #####################\n", 6);
+  printc("Spawn Base Alien:  \t\t  Press A Key\n", 3);
+  printc("Spawn Alpha Alien: \t\t  Press S Key\n", 3);
+  printc("Spawn Beta Alien:  \t\t  Press D Key\n", 3);
+  printc("##################### Community B #####################\n", 6);
+  printc("Spawn Base Alien:  \t\t  Press B Key\n", 3);
+  printc("Spawn Alpha Alien: \t\t  Press N Key\n", 3);
+  printc("Spawn Beta Alien:  \t\t  Press M Key\n", 3);
+  printc("####################### Invader #######################\n", 6);
+  printc("Spawn Invader Alien:  \t\t  Press X Key\n", 3);
 }

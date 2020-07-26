@@ -1,6 +1,7 @@
 #ifndef _CFG_H
 #define _CFG_H
 
+/* Library to load configuration files */
 int init_cfg(void);
 void load_bridge_left(configurable *a);
 void load_bridge_right(configurable *a);

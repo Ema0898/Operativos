@@ -6,6 +6,7 @@ config_t cfg1, *cf1;
 config_t cfg2, *cf2;
 config_t cfg3, *cf3;
 
+/* Init configuration library */
 int init_cfg(void)
 {
   cf = &cfg;
@@ -65,6 +66,7 @@ int init_cfg(void)
   return 1;
 }
 
+/* load right bridge configurarion file */
 void load_bridge_right(configurable *a)
 {
   config_lookup_int(cf1, "weight", &a->weight_confg);
@@ -81,6 +83,7 @@ void load_bridge_right(configurable *a)
   config_lookup_int(cf1, "amount_south", &a->amount_south_confg);
 }
 
+/* load left bridge configurarion file */
 void load_bridge_left(configurable *a)
 {
   config_lookup_int(cf2, "weight", &a->weight_confg);
@@ -97,6 +100,7 @@ void load_bridge_left(configurable *a)
   config_lookup_int(cf2, "amount_south", &a->amount_south_confg);
 }
 
+/* load center bridge configurarion file */
 void load_bridge_center(configurable *a)
 {
   config_lookup_int(cf3, "length", &a->length_confg);
@@ -113,6 +117,7 @@ void load_bridge_center(configurable *a)
   config_lookup_int(cf3, "amount_south", &a->amount_south_confg);
 }
 
+/* load alien configurarion file */
 void load_alien(int *velocity, int *percentages, int *weight)
 {
   config_lookup_int(cf, "velocity", velocity);
@@ -127,6 +132,7 @@ void load_alien(int *velocity, int *percentages, int *weight)
   config_lookup_int(cf, "alien_b_beta", &percentages[5]);
 }
 
+/* quit configuration library */
 void quit_cfg(void)
 {
   config_destroy(cf);

@@ -5,11 +5,13 @@
 
 TTF_Font *font;
 
+/* print errors */
 void log_error(char *msg)
 {
   printf("Error in %s: %s\n", msg, SDL_GetError());
 }
 
+/* load texture */
 SDL_Texture *load_texture(const char *file, SDL_Renderer *ren)
 {
   SDL_Texture *texture = IMG_LoadTexture(ren, file);
@@ -21,6 +23,7 @@ SDL_Texture *load_texture(const char *file, SDL_Renderer *ren)
   return texture;
 }
 
+/* render text from string */
 SDL_Texture *render_text(char *msg, char *file, SDL_Color color, int size, SDL_Renderer *ren)
 {
   font = TTF_OpenFont(file, size);
@@ -50,6 +53,7 @@ SDL_Texture *render_text(char *msg, char *file, SDL_Color color, int size, SDL_R
   return texture;
 }
 
+/* render texture with fixed width and height */
 void render_scale_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y, int w, int h)
 {
   SDL_Rect destination;
@@ -62,6 +66,7 @@ void render_scale_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y, int
   SDL_RenderCopy(ren, tex, NULL, &destination);
 }
 
+/* render texture with its complete width and height */
 void render_full_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y)
 {
   int w, h;
@@ -70,11 +75,13 @@ void render_full_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y)
   render_scale_texture(tex, ren, x, y, w, h);
 }
 
+/* render specific section of image */
 void render_clip(SDL_Texture *tex, SDL_Renderer *ren, SDL_Rect destination, SDL_Rect *clip)
 {
   SDL_RenderCopy(ren, tex, clip, &destination);
 }
 
+/* render spritesheet texture */
 void render_sheet_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y, SDL_Rect *clip)
 {
   SDL_Rect destination;
@@ -94,6 +101,7 @@ void render_sheet_texture(SDL_Texture *tex, SDL_Renderer *ren, int x, int y, SDL
   render_clip(tex, ren, destination, clip);
 }
 
+/* init graphics library */
 int init_graphics(void)
 {
   int result = 0;
@@ -119,6 +127,7 @@ int init_graphics(void)
   }
 }
 
+/* get texture hit box */
 SDL_Rect get_texture_rect(SDL_Texture *tex, int x, int y)
 {
   SDL_Rect rect;
@@ -132,6 +141,7 @@ SDL_Rect get_texture_rect(SDL_Texture *tex, int x, int y)
   return rect;
 }
 
+/* get texture hit box with fixed width and height */
 SDL_Rect get_texture_rect_wh(SDL_Texture *tex, int x, int y, int w, int h)
 {
   SDL_Rect rect;
@@ -143,6 +153,7 @@ SDL_Rect get_texture_rect_wh(SDL_Texture *tex, int x, int y, int w, int h)
   return rect;
 }
 
+/* finish graphic library */
 void quit_graphics(void)
 {
   IMG_Quit();

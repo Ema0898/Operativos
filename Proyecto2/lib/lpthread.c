@@ -30,14 +30,14 @@ int Lthread_create(lpthread_t *thread, const lpthread_attr_t *attr, int (*start_
 
 	/* Call the clone system call to create the child thread */
 	thread->pid = clone(start_routine, (char *)(thread->stack + FIBER_STACK),
-						SIGCHLD |
-							CLONE_FS |
-							CLONE_FILES |
-							CLONE_SIGHAND |
-							CLONE_VM |
-							CLONE_CHILD_CLEARTID |
-							CLONE_PTRACE,
-						arg);
+											SIGCHLD |
+													CLONE_FS |
+													CLONE_FILES |
+													CLONE_SIGHAND |
+													CLONE_VM |
+													CLONE_CHILD_CLEARTID |
+													CLONE_PTRACE,
+											arg);
 	if (thread->pid == -1)
 	{ // Error in clone
 		free(thread->stack);
