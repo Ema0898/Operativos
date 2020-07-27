@@ -94,6 +94,8 @@ int main(int argc, char *argv[])
   int medium = 0;
   int manual = 0;
 
+  int key_pressed = 0;
+
   int is_semaphore_left = 0;
   int is_semaphore_center = 0;
   int is_semaphore_right = 0;
@@ -424,6 +426,7 @@ int main(int argc, char *argv[])
       /* key pressed event */
       if (e.type == SDL_KEYDOWN && manual)
       {
+        key_pressed++;
         switch (e.key.keysym.sym)
         {
         case SDLK_a:
@@ -457,6 +460,7 @@ int main(int argc, char *argv[])
 
       if (e.type == SDL_KEYDOWN)
       {
+        key_pressed++;
         switch (e.key.keysym.sym)
         {
         case SDLK_x:
@@ -805,7 +809,11 @@ int main(int argc, char *argv[])
     memset(tmp4, 0, 10);
     memset(tmp5, 0, 10);
 
+    //render_scale_texture(invader_img, ren, 630, 120, 150, 50);
+
     SDL_RenderPresent(ren);
+
+    printf("KEY PRESSED =  %d\n", key_pressed);
 
     SDL_Delay(16.666667 * 2);
   }
@@ -827,21 +835,53 @@ int main(int argc, char *argv[])
   quit_graphics();
   quit_cfg();
 
-  aliens_a_size = llist_get_size(aliens_a);
-  aliens_b_size = llist_get_size(aliens_b);
+  // aliens_a_size = llist_get_size(aliens_a);
+
+  // if (aliens_a_size != 0)
+  // {
+  //   for (int i = 0; i < aliens_a_size; ++i)
+  //   {
+  //     alien *curr = llist_get_by_index(aliens_a, i);
+  //     if (curr == NULL)
+  //     {
+  //       printf("BREAKING LOOP\n");
+  //       break;
+  //     }
+  //     lpthread_t *thread = curr->thread;
+  //     Lthread_exit(thread->pid);
+  //     //Lthread_join(*(curr->thread), NULL);
+  //     free(thread);
+  //     free(curr->lottery_numbers);
+
+  //     aliens_a_size = llist_get_size(aliens_a);
+  //   }
+  // }
+
+  // printf("ALIENS A JOINED\n");
+
+  // if (aliens_b_size != 0)
+  // {
+  //   for (int i = 0; i < aliens_b_size; ++i)
+  //   {
+  //     alien *curr = llist_get_by_index(aliens_b, i);
+  //     if (curr == NULL)
+  //     {
+  //       printf("BREAKING LOOP\n");
+  //       break;
+  //     }
+  //     lpthread_t *thread = curr->thread;
+  //     Lthread_exit(thread->pid);
+  //     //Lthread_join(*(curr->thread), NULL);
+  //     free(thread);
+  //     free(curr->lottery_numbers);
+
+  //     aliens_b_size = llist_get_size(aliens_b);
+  //   }
+  // }
+
+  // printf("ALIENS B JOINED\n");
 
   /* Free Memory */
-  llist_free(list_bridge_left);
-  llist_free(list_bridge_center);
-  llist_free(list_bridge_right);
-
-  llist_free(aliens_left_north);
-  llist_free(aliens_left_south);
-  llist_free(aliens_right_north);
-  llist_free(aliens_right_south);
-  llist_free(aliens_center_north);
-  llist_free(aliens_center_south);
-
   free(bridge_left_conf);
   free(bridge_right_conf);
   free(bridge_center_conf);
@@ -850,9 +890,9 @@ int main(int argc, char *argv[])
   free(bridge_struct_right);
   free(bridge_struct_center);
 
-  free(weight_now_left);
-  free(weight_now_right);
-  free(weight_now_center);
+  // free(weight_now_left);
+  // free(weight_now_right);
+  // free(weight_now_center);
 
   free(params_left);
   free(params_right);
@@ -865,54 +905,35 @@ int main(int argc, char *argv[])
   free(aliens_count_north_center);
   free(aliens_count_south_center);
 
-  /* JOIN THREADS */
-  Lthread_join(algorithm_left, NULL);
-  Lthread_join(algorithm_right, NULL);
-  Lthread_join(algorithm_center, NULL);
-  printf("ALGORITHMS THREADS JOINED\n");
+  // /* JOIN THREADS */
+  Lthread_exit(algorithm_left.pid);
+  Lthread_exit(algorithm_right.pid);
+  Lthread_exit(algorithm_center.pid);
+  printf("ALGORITHMS THREADS EXIT\n");
 
-  Lthread_join(invader_thread_id, NULL);
-  printf("INVADER THREAD JOINED\n");
+  Lthread_exit(invader_thread_id.pid);
+  printf("INVADER THREAD EXIT\n");
 
-  if (aliens_a_size != 0)
-  {
-    for (int i = 0; i < aliens_a_size; ++i)
-    {
-      alien *curr = llist_get_by_index(aliens_a, i);
-      if (curr == NULL)
-      {
-        printf("BREAKING LOOP\n");
-        break;
-      }
-      Lthread_join(*(curr->thread), NULL);
-    }
-  }
+  // llist_free(list_bridge_left);
+  // llist_free(list_bridge_center);
+  // llist_free(list_bridge_right);
 
-  printf("ALIENS A JOINED\n");
+  // llist_free(aliens_left_north);
+  // llist_free(aliens_left_south);
+  // llist_free(aliens_right_north);
+  // llist_free(aliens_right_south);
+  // llist_free(aliens_center_north);
+  // llist_free(aliens_center_south);
 
-  if (aliens_b_size != 0)
-  {
-    for (int i = 0; i < aliens_b_size; ++i)
-    {
-      alien *curr = llist_get_by_index(aliens_b, i);
-      if (curr == NULL)
-      {
-        printf("BREAKING LOOP\n");
-        break;
-      }
-      Lthread_join(*(curr->thread), NULL);
-    }
-  }
+  // printf("LISTS FREE\n");
 
-  printf("ALIENS B JOINED\n");
+  // Lthread_exit(automatic_mode.pid);
+  // printf("AUTOMATIC MODE JOINED\n");
 
-  Lthread_join(automatic_mode, NULL);
-  printf("AUTOMATIC MODE JOINED\n");
+  // llist_free(aliens_a);
+  // llist_free(aliens_b);
 
-  llist_free(aliens_a);
-  llist_free(aliens_b);
-
-  printf("ALIEN LISTS FREE\n");
+  // printf("ALIEN LISTS FREE\n");
 
   return 0;
 }
@@ -1014,7 +1035,7 @@ int alien_a_thread(void *param)
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
+    move(&my_alien->pos, routes_a[0][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working, 0);
   }
 
   int can_move = 0;
@@ -1137,7 +1158,7 @@ init_bridge:
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[bridge_decision][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
+    move(&my_alien->pos, routes_a[bridge_decision][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working, 0);
   }
 
   /* bridge start */
@@ -1160,14 +1181,14 @@ init_bridge:
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[bridge_decision + 3][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
+    move(&my_alien->pos, routes_a[bridge_decision + 3][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working, 1);
   }
 
   /* pink end */
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_a[7][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working);
+    move(&my_alien->pos, routes_a[7][i], my_alien->velocity, aliens_a, my_alien->id, 0, &my_alien->working, 0);
   }
 
   int curr_index = llist_get_alien_index(aliens_a, my_alien->id);
@@ -1191,7 +1212,7 @@ int alien_b_thread(void *param)
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
+    move(&my_alien->pos, routes_b[0][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working, 0);
   }
 
   int can_move = 0;
@@ -1315,7 +1336,7 @@ init_bridge2:
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[bridge_decision][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
+    move(&my_alien->pos, routes_b[bridge_decision][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working, 0);
   }
 
   int bridge_result2 = move_bridge(&my_alien->pos, &my_alien->progress, -1, aliens_b, my_alien->id, 1, &my_alien->rr_quantum, &my_alien->working);
@@ -1334,12 +1355,12 @@ init_bridge2:
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[bridge_decision + 3][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
+    move(&my_alien->pos, routes_b[bridge_decision + 3][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working, 1);
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    move(&my_alien->pos, routes_b[7][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working);
+    move(&my_alien->pos, routes_b[7][i], my_alien->velocity, aliens_b, my_alien->id, 1, &my_alien->working, 0);
   }
 
   int curr_index = llist_get_alien_index(aliens_b, my_alien->id);

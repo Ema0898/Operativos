@@ -26,6 +26,7 @@ void llist_free(llist *list)
   while (curr != NULL)
   {
     next = curr->next;
+    //free(curr->data);
     free(curr);
     curr = next;
   }

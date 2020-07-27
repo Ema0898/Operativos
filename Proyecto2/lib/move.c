@@ -31,7 +31,7 @@ int stop_move(point *actual, point dest, float dist_x, float dist_y)
 }
 
 /* move alien and checks collisions */
-void move(point *actual, point dest, float velocity, llist *list, int index, int community, short *working)
+void move(point *actual, point dest, float velocity, llist *list, int index, int community, short *working, int need_inter)
 {
   float dist_x = dest.x - actual->x;
   float dist_y = dest.y - actual->y;
@@ -45,24 +45,33 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
 
   float tmp_x, tmp_y;
 
-  SDL_Rect myself, other;
+  SDL_Rect myself, other, intersection_square;
 
-  int square;
+  intersection_square.w = 150;
+  intersection_square.h = 50;
+
+  int h, w;
 
   if (community == 0)
   {
-    square = 28;
+    intersection_square.x = 570;
+    intersection_square.y = 500;
+    h = 23;
+    w = 23;
   }
   else if (community == 1)
   {
-    square = 20;
+    intersection_square.x = 600;
+    intersection_square.y = 120;
+    h = 25;
+    w = 19;
   }
 
-  myself.h = square;
-  myself.w = square;
+  myself.h = h;
+  myself.w = w;
 
-  other.h = square;
-  other.w = square;
+  other.h = h;
+  other.w = w;
 
   int intersection = 0;
   int size = 0;
@@ -96,6 +105,11 @@ void move(point *actual, point dest, float velocity, llist *list, int index, int
           other.y = curr->pos.y;
 
           if (SDL_HasIntersection(&myself, &other))
+          {
+            intersection = 1;
+          }
+
+          if (SDL_HasIntersection(&other, &intersection_square) && need_inter)
           {
             intersection = 1;
           }

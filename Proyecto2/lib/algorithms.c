@@ -101,11 +101,11 @@ void Y_algorithm(algs_params *params)
         {
           alien_to_move = (alien *)lottery_winner(params->north);
           alien_id = llist_get_alien_index(params->north, alien_to_move->id);
-          llist_remove_by_index(params->north, alien_id);
         }
         else
         {
-          alien_to_move = (alien *)llist_pop(params->north);
+          alien_to_move = (alien *)llist_get_by_index(params->north, 0);
+          alien_id = 0;
         }
       }
       else
@@ -119,11 +119,11 @@ void Y_algorithm(algs_params *params)
         {
           alien_to_move = (alien *)lottery_winner(params->south);
           alien_id = llist_get_alien_index(params->south, alien_to_move->id);
-          llist_remove_by_index(params->south, alien_id);
         }
         else
         {
-          alien_to_move = (alien *)llist_pop(params->south);
+          alien_to_move = (alien *)llist_get_by_index(params->south, 0);
+          alien_id = 0;
         }
       }
       while (*params->weight_now + alien_to_move->weight > params->bridge_weight)
@@ -131,6 +131,16 @@ void Y_algorithm(algs_params *params)
         params->turn = turn;
         bridge_list_update(params);
       }
+
+      if (turn == 0)
+      {
+        llist_remove_by_index(params->north, alien_id);
+      }
+      else
+      {
+        llist_remove_by_index(params->south, alien_id);
+      }
+
       *params->weight_now += alien_to_move->weight;
       alien_to_move->working = 1;
       gettimeofday(&alien_to_move->last_update, NULL);
