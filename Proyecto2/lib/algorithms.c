@@ -6,8 +6,10 @@
 #include <unistd.h>
 #include <schedulers.h>
 
+/* Method to update the bridge list */
 void bridge_list_update(algs_params *params)
 {
+  /* variables to get time and list of aliens */
   struct timeval tic, toc;
   float time_difference, time_difference2;
   int list_size = llist_get_size(params->bridge);
@@ -15,18 +17,22 @@ void bridge_list_update(algs_params *params)
 
   for (int i = 0; i < list_size; i++)
   {
-
     alien_now = (alien *)llist_get_by_index(params->bridge, i);
     if (alien_now == NULL)
     {
       break;
     }
+    /* Get time toc */
     gettimeofday(&toc, NULL);
     tic = alien_now->last_update;
+    /* Time total */
     time_difference = (double)(toc.tv_usec - tic.tv_usec) / 1000000 + (double)(toc.tv_sec - tic.tv_sec);
     alien_now->last_update = toc;
     alien_now->accumulator += time_difference;
+    /* Calculate progress */
     alien_now->progress = alien_now->accumulator / alien_now->duration;
+
+    /* Finish to pass bridge */
     if (alien_now->progress >= 1)
     {
       alien_now->working = 0;
@@ -36,9 +42,11 @@ void bridge_list_update(algs_params *params)
     }
     else
     {
+      /* Condition of Round Robin */
       if (params->bridge_struct->bridge_type == ROUND_ROBIN)
       {
         time_difference2 = (double)(alien_now->last_update.tv_usec - alien_now->work_init_time.tv_usec) / 1000000 + (double)(alien_now->last_update.tv_sec - alien_now->work_init_time.tv_sec);
+        /* Condition of quantum */
         if (params->bridge_struct->quantum <= time_difference2)
         {
           alien_now->rr_quantum = 1;
@@ -60,9 +68,11 @@ void bridge_list_update(algs_params *params)
   }
 }
 
+/* Algorithm Y */
 void Y_algorithm(algs_params *params)
 {
 
+  /* Variables */
   int turn = 0;
   int i;
   int alien_id = 0;
@@ -70,8 +80,10 @@ void Y_algorithm(algs_params *params)
 
   while (1)
   {
+    /* Turns, Conditions if are not amount */
     if (turn == 0)
     {
+      /* Condition if there are not enough aliens */
       if (llist_get_size(params->north) < params->amount_to_pass && llist_get_size(params->south) > llist_get_size(params->north))
       {
         turn = 1;
@@ -79,12 +91,14 @@ void Y_algorithm(algs_params *params)
     }
     else
     {
+      /* Condition if there are not enough aliens */
       if (llist_get_size(params->south) < params->amount_to_pass && llist_get_size(params->north) > llist_get_size(params->south))
       {
         turn = 0;
       }
     }
 
+    /* Logic of aliens to pass */
     for (i = 0; i < params->amount_to_pass; i++)
     {
       if (llist_get_size(params->north) == 0 && llist_get_size(params->south) == 0)
@@ -114,7 +128,7 @@ void Y_algorithm(algs_params *params)
         {
           break;
         };
-
+        /* if Lotery Scheduler */
         if (params->bridge_struct->bridge_type == 4)
         {
           alien_to_move = (alien *)lottery_winner(params->south);
@@ -126,6 +140,7 @@ void Y_algorithm(algs_params *params)
           alien_id = 0;
         }
       }
+      /* Weight of bridge */
       while (*params->weight_now + alien_to_move->weight > params->bridge_weight)
       {
         params->turn = turn;
@@ -143,6 +158,7 @@ void Y_algorithm(algs_params *params)
 
       *params->weight_now += alien_to_move->weight;
       alien_to_move->working = 1;
+      /* Update of time */
       gettimeofday(&alien_to_move->last_update, NULL);
       gettimeofday(&alien_to_move->work_init_time, NULL);
       llist_insert_end(params->bridge, alien_to_move);
@@ -161,21 +177,26 @@ void Y_algorithm(algs_params *params)
       bridge_list_update(params);
     }
 
+    /* change turn */
     turn = !turn;
     *params->aliens_count_north = 0;
     *params->aliens_count_south = 0;
   }
 }
 
+/* Survival ALgorithm */
 void survival_algorithm(algs_params *params)
 {
-  // Toma las dos listas y solo pasa 1 de cada una al algoritmo Y
+  /* Take the two lists and only pass the ones that can from each one to the algorithm Y */
+  /* Egoistic */
   params->amount_to_pass = 1000;
   Y_algorithm(params);
 }
 
+/* Semaphore Algorithm */
 void semaphore_algorithm(algs_params *params)
 {
+  /* variables */
   int *turn = params->turn_semaphore;
   int i;
   int alien_id = 0;
@@ -191,20 +212,25 @@ void semaphore_algorithm(algs_params *params)
 
   while (1)
   {
+    /* get time */
     gettimeofday(&tic2, NULL);
 
+    /* Logic of aliens to pass */
     for (i = 0; i < params->amount_to_pass; i++)
     {
+      /* wait if any list has aliens */
       if (llist_get_size(params->north) == 0 && llist_get_size(params->south) == 0)
       {
         sleep(1);
       }
       if (*turn == 0)
       {
+        /* North Aliens */
         if (llist_get_size(params->north) == 0)
         {
           break;
         };
+        /* if lottery scheduler */
         if (params->bridge_struct->bridge_type == 4)
         {
           alien_to_move = (alien *)lottery_winner(params->north);
@@ -216,6 +242,7 @@ void semaphore_algorithm(algs_params *params)
       }
       else
       {
+        /* South Aliens */
         if (llist_get_size(params->south) == 0)
         {
           break;
@@ -229,6 +256,7 @@ void semaphore_algorithm(algs_params *params)
           alien_to_move = (alien *)llist_get_by_index(params->south, 0);
         }
       }
+      /* success pass */
       if (*params->weight_now + alien_to_move->weight <= params->bridge_weight)
       {
         if (*turn == 0)
@@ -243,6 +271,7 @@ void semaphore_algorithm(algs_params *params)
         }
         *params->weight_now += alien_to_move->weight;
         alien_to_move->working = 1;
+        /* get time */
         gettimeofday(&alien_to_move->last_update, NULL);
         gettimeofday(&alien_to_move->work_init_time, NULL);
         llist_insert_end(params->bridge, alien_to_move);
@@ -250,6 +279,7 @@ void semaphore_algorithm(algs_params *params)
     }
 
     gettimeofday(&toc2, NULL);
+    /* get time */
     time_difference2 = (double)(toc2.tv_usec - tic2.tv_usec) / 1000000 + (double)(toc2.tv_sec - tic2.tv_sec);
     accumulator += time_difference2;
 
@@ -278,6 +308,8 @@ void semaphore_algorithm(algs_params *params)
           params->turn = *turn;
           bridge_list_update(params);
         }
+
+        /* change turn */
         *turn = !*turn;
         accumulator = 0;
       }

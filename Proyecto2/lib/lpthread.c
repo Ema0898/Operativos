@@ -2,26 +2,27 @@
 
 #include "../include/lpthread.h"
 
-// List of threads
-static lpthread_t lpthreadList[MAX_FIBERS];
-// Required pids
+/* List of threads */
+static lpthread_t lpthreadList[THREADS];
+/* Required pids */
 static pid_t parent_pid;
 static pid_t group_pid;
-// Counter for threads
+/* Counter for threads */
 static int numLPthreads = 0;
-// Variable to check if it already started
+/* Variable to check if it already started */
 static char started_ = 0;
 
+/* Create */
 int Lthread_create(lpthread_t *thread, const lpthread_attr_t *attr, int (*start_routine)(void *), void *arg)
 {
 	if (started_ == 0)
-	{ // Singleton for the system
+	{ /* Singleton for the system */
 		init_threads();
 		started_ = 1;
 	}
 
-	/*Allocate the stack*/
-	thread->stack = malloc(FIBER_STACK);
+	/* Allocate the stack */
+	thread->stack = malloc(THREAD_STACK);
 	if (thread->stack == 0)
 	{
 		printf("Error: Could not allocate stack.\n");
@@ -29,33 +30,28 @@ int Lthread_create(lpthread_t *thread, const lpthread_attr_t *attr, int (*start_
 	}
 
 	/* Call the clone system call to create the child thread */
-	thread->pid = clone(start_routine, (char *)(thread->stack + FIBER_STACK),
-											SIGCHLD |
-													CLONE_FS |
-													CLONE_FILES |
-													CLONE_SIGHAND |
-													CLONE_VM |
-													CLONE_CHILD_CLEARTID |
-													CLONE_PTRACE,
-											arg);
+	thread->pid = clone(start_routine, (char *)(thread->stack + THREAD_STACK),
+						SIGCHLD |
+							CLONE_FS |
+							CLONE_FILES |
+							CLONE_SIGHAND |
+							CLONE_VM |
+							CLONE_CHILD_CLEARTID |
+							CLONE_PTRACE,
+						arg);
 	if (thread->pid == -1)
-	{ // Error in clone
+	{
+		/* Error in clone */
 		free(thread->stack);
 		printf("Error: clone system call failed.\n");
 		return LF_CLONEERROR;
 	}
-	// Copies thread to list
+	/* Copies thread to list */
 	thread->detached = 0;
 	memcpy((void *)&lpthreadList[numLPthreads++], (void *)thread, sizeof(lpthread_t));
 	return LF_NOERROR;
 }
 
-int Lthread_exit(int pid)
-{
-	kill(pid, SIGKILL);
-	printf("thread(killed), id = %d\n", pid);
-	return 0;
-}
 int Lthread_yield()
 {
 	/* Call the sched_yield system call which moves the current process to the
@@ -63,13 +59,15 @@ int Lthread_yield()
 	sched_yield();
 	return 0;
 }
+
+/* Join */
 int Lthread_join(lpthread_t thread, void **retval)
 {
 	int index = map_pid_index(thread.pid);
 
 	if (lpthreadList[index].detached == 0)
 	{
-		waitpid(thread.pid, 0, 0); // Key is here, wait for it to end
+		waitpid(thread.pid, 0, 0);
 		printf("%s\n", "done join");
 
 		return 0;
@@ -79,6 +77,16 @@ int Lthread_join(lpthread_t thread, void **retval)
 		return 1;
 	}
 }
+
+/* Exit */
+int Lthread_exit(int pid)
+{
+	kill(pid, SIGKILL);
+	printf("thread(killed), id = %d\n", pid);
+	return 0;
+}
+
+/* Detach */
 int Lthread_detach(lpthread_t thread)
 {
 	int index = map_pid_index(thread.pid);
@@ -86,73 +94,30 @@ int Lthread_detach(lpthread_t thread)
 	return 0;
 }
 
-int Lmutex_init(lpthread_mutex_t *restrict mutex, const lpthread_mutexattr_t *restrict attr)
-{
-	mutex->locked = 0; // Set the mutex as unlocked
-	mutex->pid = 0;
-	return 0;
-}
-int Lmutex_destroy(lpthread_mutex_t *mutex)
-{
-	mutex->locked = 0; // Set the mutex as unlocked
-	mutex->pid = 0;
-	return 0;
-}
-int Lmutex_unlock(lpthread_mutex_t *mutex)
-{
-	mutex->locked = 0; // Set the mutex as unlocked
-	mutex->pid = 0;
-	return 0;
-}
-int Lmutex_trylock(lpthread_mutex_t *mutex)
-{
-	if (mutex->locked == 0)
-	{ // If mutex is not locked, lock it
-		mutex->locked = 1;
-		mutex->pid = getpid();
-		return 0;
-	}
-	return 1;
-}
-int Lmutex_lock(lpthread_mutex_t *mutex)
-{
-LOOP:
-	while (mutex->locked)
-		; // Race condition !!!!!!!!! Wait for mutex to unlock
-	pid_t id = getpid();
-	mutex->locked = 1;
-	mutex->pid = id;
-	if (mutex->pid != id)
-	{ // Method one to eliminate race condition
-		goto LOOP;
-	}
-	return 0;
-}
-
+/* END */
 void Lthread_end()
 {
-	// Kills the thread
+	/* Kills the thread */
 	killpg(getpgrp(), SIGKILL);
 }
+
+/* Init Threads */
 void init_threads()
 {
-	// Initialices
-	for (int i = 0; i < MAX_FIBERS; ++i)
+	for (int i = 0; i < THREADS; ++i)
 	{
 		lpthreadList[i].pid = 0;
 		lpthreadList[i].stack = 0;
 	}
-	// Signal from terminal
 	signal(SIGINT, Lthread_end);
-	atexit(Lthread_end); // When parent ends
-	// Sets the required pids
+	atexit(Lthread_end);
 	group_pid = getpgrp();
 	parent_pid = getpid();
 }
+
 int map_pid_index(pid_t id)
 {
-	// Search for that pid
-	for (int i = 0; i < MAX_FIBERS; ++i)
+	for (int i = 0; i < THREADS; ++i)
 	{
 		if (lpthreadList[i].pid == id)
 		{
@@ -161,6 +126,7 @@ int map_pid_index(pid_t id)
 	}
 	return -1;
 }
+
 int wait_all()
 {
 	printf("%s\n", "Calling wait");
@@ -176,7 +142,7 @@ int wait_all()
 	/* Wait for the lpthreads to quit, then free the stacks */
 	while (numLPthreads > lpthreadsRemaining)
 	{
-		pid = wait(0); //key here
+		pid = wait(0);
 		if (pid == -1)
 		{
 			printf("Error: wait system call failed.\n");
@@ -209,6 +175,63 @@ int wait_all()
 
 	return LF_NOERROR;
 }
+
+/* MUTEX METHODS */
+
+/* Init */
+int Lmutex_init(lpthread_mutex_t *restrict mutex, const lpthread_mutexattr_t *restrict attr)
+{
+	mutex->locked = 0; // Set the mutex as unlocked
+	mutex->pid = 0;
+	return 0;
+}
+
+/* Destroy */
+int Lmutex_destroy(lpthread_mutex_t *mutex)
+{
+	mutex->locked = 0; // Set the mutex as unlocked
+	mutex->pid = 0;
+	return 0;
+}
+
+/* Unlock */
+int Lmutex_unlock(lpthread_mutex_t *mutex)
+{
+	mutex->locked = 0; // Set the mutex as unlocked
+	mutex->pid = 0;
+	return 0;
+}
+
+/* Trylock */
+int Lmutex_trylock(lpthread_mutex_t *mutex)
+{
+	if (mutex->locked == 0)
+	{ // If mutex is not locked, lock it
+		mutex->locked = 1;
+		mutex->pid = getpid();
+		return 0;
+	}
+	return 1;
+}
+
+/* Lock */
+int Lmutex_lock(lpthread_mutex_t *mutex)
+{
+LOOP:
+	while (mutex->locked)
+		; /* Race condition !*/
+	pid_t id = getpid();
+	mutex->locked = 1;
+	mutex->pid = id;
+	if (mutex->pid != id)
+	{
+		/* Method one to eliminate race condition */
+		goto LOOP;
+	}
+	return 0;
+}
+
+/* Other methods */
 void sync_printf(char *format, ...)
 {
 	static lpthread_mutex_t lock = {0, 0};

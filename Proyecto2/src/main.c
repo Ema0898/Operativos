@@ -809,11 +809,7 @@ int main(int argc, char *argv[])
     memset(tmp4, 0, 10);
     memset(tmp5, 0, 10);
 
-    //render_scale_texture(invader_img, ren, 630, 120, 150, 50);
-
     SDL_RenderPresent(ren);
-
-    printf("KEY PRESSED =  %d\n", key_pressed);
 
     SDL_Delay(16.666667 * 2);
   }
@@ -835,68 +831,78 @@ int main(int argc, char *argv[])
   quit_graphics();
   quit_cfg();
 
-  // aliens_a_size = llist_get_size(aliens_a);
+  printf("GUI END \n");
 
-  // if (aliens_a_size != 0)
-  // {
-  //   for (int i = 0; i < aliens_a_size; ++i)
-  //   {
-  //     alien *curr = llist_get_by_index(aliens_a, i);
-  //     if (curr == NULL)
-  //     {
-  //       printf("BREAKING LOOP\n");
-  //       break;
-  //     }
-  //     lpthread_t *thread = curr->thread;
-  //     Lthread_exit(thread->pid);
-  //     //Lthread_join(*(curr->thread), NULL);
-  //     free(thread);
-  //     free(curr->lottery_numbers);
+  aliens_a_size = llist_get_size(aliens_a);
 
-  //     aliens_a_size = llist_get_size(aliens_a);
-  //   }
-  // }
+  if (aliens_a_size != 0)
+  {
+    for (int i = 0; i < aliens_a_size; ++i)
+    {
+      alien *curr = llist_get_by_index(aliens_a, i);
+      if (curr == NULL)
+      {
+        printf("BREAKING LOOP\n");
+        break;
+      }
+      lpthread_t *thread = curr->thread;
+      Lthread_exit(thread->pid);
+      //Lthread_join(*(curr->thread), NULL);
+      // free(thread);
+      // free(curr->lottery_numbers);
 
-  // printf("ALIENS A JOINED\n");
+      aliens_a_size = llist_get_size(aliens_a);
+    }
+  }
 
-  // if (aliens_b_size != 0)
-  // {
-  //   for (int i = 0; i < aliens_b_size; ++i)
-  //   {
-  //     alien *curr = llist_get_by_index(aliens_b, i);
-  //     if (curr == NULL)
-  //     {
-  //       printf("BREAKING LOOP\n");
-  //       break;
-  //     }
-  //     lpthread_t *thread = curr->thread;
-  //     Lthread_exit(thread->pid);
-  //     //Lthread_join(*(curr->thread), NULL);
-  //     free(thread);
-  //     free(curr->lottery_numbers);
+  printf("ALIENS A JOINED\n");
 
-  //     aliens_b_size = llist_get_size(aliens_b);
-  //   }
-  // }
+  if (aliens_b_size != 0)
+  {
+    for (int i = 0; i < aliens_b_size; ++i)
+    {
+      alien *curr = llist_get_by_index(aliens_b, i);
+      if (curr == NULL)
+      {
+        printf("BREAKING LOOP\n");
+        break;
+      }
+      lpthread_t *thread = curr->thread;
+      Lthread_exit(thread->pid);
+      //Lthread_join(*(curr->thread), NULL);
+      // free(thread);
+      // free(curr->lottery_numbers);
 
-  // printf("ALIENS B JOINED\n");
+      aliens_b_size = llist_get_size(aliens_b);
+    }
+  }
+
+  printf("ALIENS B JOINED\n");
 
   /* Free Memory */
   free(bridge_left_conf);
   free(bridge_right_conf);
   free(bridge_center_conf);
 
+  printf("FREE 1 PASSED\n");
+
   free(bridge_struct_left);
   free(bridge_struct_right);
   free(bridge_struct_center);
 
-  // free(weight_now_left);
-  // free(weight_now_right);
-  // free(weight_now_center);
+  printf("FREE 2 PASSED\n");
+
+  free(weight_now_left);
+  free(weight_now_right);
+  free(weight_now_center);
+
+  printf("FREE 3 PASSED\n");
 
   free(params_left);
   free(params_right);
   free(params_center);
+
+  printf("FREE 4 PASSED\n");
 
   free(aliens_count_north_left);
   free(aliens_count_south_left);
@@ -905,35 +911,13 @@ int main(int argc, char *argv[])
   free(aliens_count_north_center);
   free(aliens_count_south_center);
 
-  // /* JOIN THREADS */
+  printf("FREE 5 PASSED\n");
+
+  /* JOIN THREADS */
   Lthread_exit(algorithm_left.pid);
   Lthread_exit(algorithm_right.pid);
   Lthread_exit(algorithm_center.pid);
   printf("ALGORITHMS THREADS EXIT\n");
-
-  Lthread_exit(invader_thread_id.pid);
-  printf("INVADER THREAD EXIT\n");
-
-  // llist_free(list_bridge_left);
-  // llist_free(list_bridge_center);
-  // llist_free(list_bridge_right);
-
-  // llist_free(aliens_left_north);
-  // llist_free(aliens_left_south);
-  // llist_free(aliens_right_north);
-  // llist_free(aliens_right_south);
-  // llist_free(aliens_center_north);
-  // llist_free(aliens_center_south);
-
-  // printf("LISTS FREE\n");
-
-  // Lthread_exit(automatic_mode.pid);
-  // printf("AUTOMATIC MODE JOINED\n");
-
-  // llist_free(aliens_a);
-  // llist_free(aliens_b);
-
-  // printf("ALIEN LISTS FREE\n");
 
   return 0;
 }

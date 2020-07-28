@@ -6,29 +6,35 @@
 #include <list.h>
 #include <time.h>
 
+/* Variables */
 struct timeval tic, toc;
 int lottery_number_now = 1;
 time_t t;
 llist *possible_numbers = NULL;
 
+/* Priority scheduler */
 void priority_scheduler(llist *aliens, void *data)
 {
+  /* Method that inserts to the list depending on the priority */
   llist_insert_scheduler_attribute(aliens, data, 0);
 }
 
 void SJF_scheduler(llist *aliens, void *data)
 {
+  /* Method that inserts to the list depending on the velocity */
   llist_insert_scheduler_attribute(aliens, data, 1);
 }
 
 void FIFO_scheduler(llist *aliens, void *data)
 {
+  /* Insert in order */
   llist_insert_end(aliens, data);
 }
 
+/* Check the winner ticket */
 void *lottery_winner(llist *aliens)
 {
-  // Genera un random con los tiquetes dados y se extrae al ganador de la lista
+  /* Generate random with tickets and select the winner */
   alien *winner = NULL;
   srand((unsigned)time(&t));
   int bingo;
@@ -43,10 +49,10 @@ void *lottery_winner(llist *aliens)
   llist_remove_by_index(possible_numbers, alien_index);
   return winner;
 }
-
+/*Give tickets*/
 void lottery_scheduler(llist *aliens, void *data)
 {
-  // inserta un alien y le da tiquetes dependiendo de la prioridad = 0 || 1
+  /*insert an alien and give it tickets depending on the priority = 0 || 1*/
   if (possible_numbers == NULL)
   {
     possible_numbers = llist_create(NULL);
