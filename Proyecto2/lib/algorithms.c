@@ -105,12 +105,31 @@ void Y_algorithm(algs_params *params)
       {
         sleep(1);
       }
+
       if (turn == 0)
       {
         if (llist_get_size(params->north) == 0)
         {
           break;
         }
+      }
+      else
+      {
+        if (llist_get_size(params->south) == 0)
+        {
+          break;
+        }
+      }
+
+      /* Weight of bridge */
+      while (*params->weight_now + params->weight_alien > params->bridge_weight)
+      {
+        params->turn = turn;
+        bridge_list_update(params);
+      }
+
+      if (turn == 0)
+      {
         if (params->bridge_struct->bridge_type == 4)
         {
           alien_to_move = (alien *)lottery_winner(params->north);
@@ -122,10 +141,6 @@ void Y_algorithm(algs_params *params)
       }
       else
       {
-        if (llist_get_size(params->south) == 0)
-        {
-          break;
-        };
         /* if Lotery Scheduler */
         if (params->bridge_struct->bridge_type == 4)
         {
@@ -135,12 +150,6 @@ void Y_algorithm(algs_params *params)
         {
           alien_to_move = (alien *)llist_get_by_index(params->south, 0);
         }
-      }
-      /* Weight of bridge */
-      while (*params->weight_now + alien_to_move->weight > params->bridge_weight)
-      {
-        params->turn = turn;
-        bridge_list_update(params);
       }
 
       if (turn == 0)

@@ -67,6 +67,7 @@ typedef struct
   int *turn_semaphore;
   int *aliens_count_north;
   int *aliens_count_south;
+  int weight_alien;
 } algs_params;
 
 typedef struct

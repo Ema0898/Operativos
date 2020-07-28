@@ -46,7 +46,7 @@ void *lottery_winner(llist *aliens)
     alien_index = *((int *)llist_get_by_index(possible_numbers, bingo));
     winner = (alien *)llist_get_winner(aliens, alien_index);
   }
-  llist_remove_by_index(possible_numbers, alien_index);
+  llist_remove_by_index(possible_numbers, bingo);
   return winner;
 }
 /*Give tickets*/

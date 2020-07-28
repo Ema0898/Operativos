@@ -137,6 +137,9 @@ int main(int argc, char *argv[])
 
   srand(time(NULL));
 
+  memset(percentages, 0, 6);
+  load_alien(&velocity, percentages, &aliens_weight);
+
   /* allocates linked lists */
   aliens_a = llist_create(NULL);
   aliens_b = llist_create(NULL);
@@ -210,6 +213,7 @@ int main(int argc, char *argv[])
   params_left->turn_semaphore = turn_semaphore_left;
   params_left->aliens_count_north = aliens_count_north_left;
   params_left->aliens_count_south = aliens_count_south_left;
+  params_left->weight_alien = aliens_weight;
 
   /* right bridge */
   bridge_struct_right->weight = bridge_right_conf->weight_confg;
@@ -238,6 +242,7 @@ int main(int argc, char *argv[])
   params_right->turn_semaphore = turn_semaphore_right;
   params_right->aliens_count_north = aliens_count_north_right;
   params_right->aliens_count_south = aliens_count_south_right;
+  params_right->weight_alien = aliens_weight;
 
   /* center bridge */
   bridge_struct_center->weight = bridge_center_conf->weight_confg;
@@ -266,6 +271,7 @@ int main(int argc, char *argv[])
   params_center->turn_semaphore = turn_semaphore_center;
   params_center->aliens_count_north = aliens_count_north_center;
   params_center->aliens_count_south = aliens_count_south_center;
+  params_center->weight_alien = aliens_weight;
 
   lpthread_t algorithm_left, algorithm_right, algorithm_center;
 
@@ -318,9 +324,6 @@ int main(int argc, char *argv[])
   }
 
   invader_alive = 0;
-
-  memset(percentages, 0, 6);
-  load_alien(&velocity, percentages, &aliens_weight);
 
   lpthread_t automatic_mode;
 
@@ -665,7 +668,7 @@ int main(int argc, char *argv[])
     }
 
     /*render aliens communities */
-    render_scale_texture(base_a, ren, 10, 200, 170, 170);
+    render_scale_texture(base_a, ren, 8, 200, 170, 170);
     render_scale_texture(base_b, ren, SCREEN_WIDTH - 180, 235, 170, 170);
 
     aliens_a_size = llist_get_size(aliens_a);
