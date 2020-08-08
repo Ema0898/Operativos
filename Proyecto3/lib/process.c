@@ -3,95 +3,97 @@
 #include <string.h>
 #include <structs.h>
 
-unsigned char partition(unsigned char *a, int l, int r) {
+/* partition for quick sort */
+unsigned char partition(unsigned char *list, int start, int stop) {
     unsigned char pivot, t;
     int i, j;
-    pivot = a[l];
-    i = l; j = r + 1;
+    pivot = list[start];
+    i = start; j = stop + 1;
 
     while (1)
     {
-        do ++i; while (a[i] <= pivot && i <= r);
-        do --j; while (a[j] > pivot);
+        do ++i; while (list[i] <= pivot && i <= stop);
+        do --j; while (list[j] > pivot);
         if (i >= j) break;
-        t = a[i]; a[i] = a[j]; a[j] = t;
+
+        t = list[i];
+        list[i] = list[j];
+        list[j] = t;
     }
-    t = a[l];
-    a[l] = a[j];
-    a[j] = t;
+
+    t = list[start];
+    list[start] = list[j];
+    list[j] = t;
+
     return j;
 }
 
-void quick_sort(unsigned char *a, int l, int r)
+/* sort median pixels */
+void quick_sort(unsigned char *list, int start, int stop)
 {
-    int j;
+    int tmp;
 
-    if (l < r)
+    if (start < stop)
     {
-        j = partition(a, l, r);
-        quick_sort(a, l, j - 1);
-        quick_sort(a, j + 1, r);
+        tmp = partition(list, start, stop);
+        quick_sort(list, start, tmp - 1);
+        quick_sort(list, tmp + 1, stop);
     }
 }
 
-rgb *process_image(int width, int height, rgb *image, int window_size)
+rgb *process_image(int width, int height, rgb *noisy_image, int window_size)
 {
-    int i, j, k, l;
-
     if (window_size == 1)
     {
-        return image;
+        return noisy_image;
     }
 
     // Process pixel by pixel
-    rgb *filtered = (rgb*)malloc(height * width * sizeof(rgb));
-    for (i = 0; i < height; i++)
+    rgb *filtered_image = (rgb*)malloc(height * width * sizeof(rgb));
+    for (int i = 0; i < height; i++)
     {
-        for (j = 0; j < width; j++)
+        for (int j = 0; j < width; j++)
         {
-            unsigned char *windowR = (unsigned char*)malloc(sizeof(unsigned char) * window_size * window_size);
-            unsigned char *windowB = (unsigned char*)malloc(sizeof(unsigned char) * window_size * window_size);
-            unsigned char *windowG = (unsigned char*)malloc(sizeof(unsigned char) * window_size * window_size);
+            unsigned char *r_channel = (unsigned char*)malloc(sizeof(unsigned char) * window_size * window_size);
+            unsigned char *g_channel = (unsigned char*)malloc(sizeof(unsigned char) * window_size * window_size);
+            unsigned char *b_channel = (unsigned char*)malloc(sizeof(unsigned char) * window_size * window_size);
 
-            int start = 0;
-            int left = i - window_size / 2;
-            int right = i + window_size / 2;
-            int up = j - window_size / 2;
-            int down = j + window_size / 2;
-            for (k = left; k < right; k++)
+            int index = 0;
+            int part_left = i - window_size / 2;
+            int part_right = i + window_size / 2;
+            int part_up = j - window_size / 2;
+            int part_down = j + window_size / 2;
+
+            for (int k = part_left; k < part_right; k++)
             {
-                for (l = up; l < down; l++)
+                for (int l = part_up; l < part_down; l++)
                 {
                     if (k >= 0 && l >= 0 && k < height && l < width) {
-                        windowR[start] = image[k * width + l].r;
-                        windowG[start] = image[k * width + l].g;
-                        windowB[start] = image[k * width + l].b;
-                        start++;
+                        r_channel[index] = noisy_image[k * width + l].r;
+                        g_channel[index] = noisy_image[k * width + l].g;
+                        b_channel[index] = noisy_image[k * width + l].b;
+                        index++;
                     }
                 }
             }
 
-            unsigned char filteredElementR;
-            unsigned char filteredElementG;
-            unsigned char filteredElementB;
+            quick_sort(r_channel, 0, index);
+            quick_sort(g_channel, 0, index);
+            quick_sort(b_channel, 0, index);
 
-            quick_sort(windowR, 0, start);
-            quick_sort(windowG, 0, start);
-            quick_sort(windowB, 0, start);
-
-            filtered[i * width + j].r = windowR[start / 2];
-            filtered[i * width + j].g = windowG[start / 2];
-            filtered[i * width + j].b = windowB[start / 2];
+            filtered_image[i * width + j].r = r_channel[index / 2];
+            filtered_image[i * width + j].g = g_channel[index / 2];
+            filtered_image[i * width + j].b = b_channel[index / 2];
         }
     }
 
-    for (i = 0; i < height; i++)
+    for (int i = 0; i < height; i++)
     {
-        for (j = 0; j < width; j++)
+        for (int j = 0; j < width; j++)
         {
-            image[i * width + j] = filtered[i * width + j];
+            noisy_image[i * width + j] = filtered_image[i * width + j];
         }
     }
 
-    return image;
+    return noisy_image;
 }

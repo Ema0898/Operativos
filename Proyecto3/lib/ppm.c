@@ -3,20 +3,18 @@
 #include <assert.h>
 #include <structs.h>
 
+/* write on ppm file */
 void write_ppm(char* file, int width, int height, int max, const rgb *image)
 {
-    int i;
-
-    // open file for writing
     FILE *fd;
     fd = fopen(file, "w");
 
-    // output the header
+    /* write header */
     fprintf(fd, "P3\n");
     fprintf(fd, "%d %d\n%d\n", width, height, max);
 
-    // write the image
-    for (i = 0; i < height * width; i++)
+    /* write image */
+    for (int i = 0; i < height * width; i++)
     {
         const rgb *p = image + i;
         fprintf(fd, "%d %d %d ", p->r, p->g, p->b);
@@ -25,7 +23,7 @@ void write_ppm(char* file, int width, int height, int max, const rgb *image)
     fclose(fd);
 }
 
-
+/* read ppm file */
 rgb *read_ppm(char* file, int* width, int* height, int* max)
 {
     FILE *fd;
@@ -34,7 +32,7 @@ rgb *read_ppm(char* file, int* width, int* height, int* max)
     char b[100];
     int red, green, blue;
 
-    // check if P3 ppm format
+    /* check format */
     fd = fopen(file, "r");
     n = fscanf(fd, "%[^\n] ", b);
 
@@ -60,7 +58,6 @@ rgb *read_ppm(char* file, int* width, int* height, int* max)
 
     // printf("%d x %d image, max value= %d\n", *width, *height, *max);
 
-    // size of image
     int size = *width * (*height);
 
     rgb *image = (rgb*)malloc(size*sizeof(rgb));

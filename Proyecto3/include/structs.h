@@ -1,6 +1,8 @@
 #ifndef _STRUCTS_H
 #define _STRUCTS_H
 
+/* structs to be used */
+
 typedef struct
 {
     int width, height;
